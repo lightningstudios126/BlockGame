@@ -2,7 +2,7 @@
 
 namespace BlockGameCore {
 	public static class Program {
-		[STAThread]//
+		[STAThread]
 		static void Main() {
 			using (var game = new BlockGame())
 				game.Run();
