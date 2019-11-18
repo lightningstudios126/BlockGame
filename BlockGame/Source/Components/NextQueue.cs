@@ -11,17 +11,14 @@ using Nez;
 namespace BlockGame.Source.Components {
 	class NextQueue : RenderableComponent {
 		int capacity;
-
 		IEnumerator<int> generator;
 		TileGroupDefinition[] options;
-
 		Queue<TileGroupDefinition> queue;
 
-
 		public NextQueue(Randomizers.Randomizer randomizer, int capacity = 5, params TileGroupDefinition[] options) {
-			this.generator = randomizer(options.Length).GetEnumerator();
 			this.capacity = capacity;
 			this.options = options;
+			this.generator = randomizer(options.Length).GetEnumerator();
 			this.queue = new Queue<TileGroupDefinition>(capacity);
 			InitialLoad();
 		}
@@ -43,25 +40,25 @@ namespace BlockGame.Source.Components {
 			}
 		}
 
-
-		public override float Width => 1000;
-		public override float Height => 1000;
+		public override float Width => 4 * Constants.pixelsPerTile + 2 * padding;
+		public override float Height => padding + capacity * (5 * Constants.pixelsPerTile) + padding;
+		int padding = 10;
 		public override void Render(Batcher batcher, Camera camera) {
-			//batcher.DrawRect(Transform.Position, 120, 360, Color.Linen);
-			Point offset = new Point(0, 0);
+			batcher.DrawRect(Transform.Position, Width, Height, Color.Linen);
+			Point offset = new Point(0, -2);
 			foreach (var def in queue) {
+				offset.Y += def.height + 2;
 				foreach (Point point in def.shape) {
-					DrawTile(batcher, point - offset, def.type);
+					DrawTile(batcher, point - offset, new Point(padding + Constants.pixelsPerTile, padding + Constants.pixelsPerTile), def.type);
 				}
-				offset.Y += 3;
 			}
 			batcher.DrawCircle(Transform.Position, 3, Color.Red);
 		}
 
-		public void DrawTile(Batcher batcher, Point gridLocation, Tile tile) {
-			Point offset = new Point(Constants.pixelsPerTile * gridLocation.X, -Constants.pixelsPerTile * gridLocation.Y);
+		public void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile) {
+			Point offset = new Point(Constants.pixelsPerTile * gridOffset.X, -Constants.pixelsPerTile * gridOffset.Y);
 			var texture = Entity.Scene.Content.LoadTexture(tile.spriteLocation);
-			batcher.Draw(texture, new Rectangle((offset.ToVector2() + Transform.Position).RoundToPoint(), new Point(Constants.pixelsPerTile)), tile.color);
+			batcher.Draw(texture, new Rectangle(Transform.Position.RoundToPoint() + worldOffset + offset, new Point(Constants.pixelsPerTile)), tile.color);
 		}
 	}
 }
