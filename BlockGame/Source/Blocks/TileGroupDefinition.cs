@@ -9,11 +9,15 @@ namespace BlockGame.Source.Blocks {
 		public readonly Point[] shape;
 		public readonly Tile type;
 		public readonly Point[][] kickOffsets;
+		public readonly int width;
+		public readonly int height;
 
 		public TileGroupDefinition(Tile type, (int x, int y)[] shape, (int x, int y)[][] kickOffsets) {
 			this.shape = shape.Select(a => new Point(a.x, a.y)).ToArray();
 			this.type = type;
 			this.kickOffsets = kickOffsets.Select(a => a.Select(b => new Point(b.x, b.y)).ToArray()).ToArray();
+			this.width = shape.Max(p => p.x) - shape.Min(p => p.x);
+			this.height = shape.Max(p => p.y) - shape.Min(p => p.y);
 		}
 
 		/// <summary>
