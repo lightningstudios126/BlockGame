@@ -22,5 +22,9 @@ namespace BlockGame.Source.Blocks {
 				foreach (var s in shuffled) yield return s;
 			}
 		}
+
+		public static IEnumerable<int> TrueRandomizer(int n) {
+			while (true) yield return Nez.Random.NextInt(n);
+		}
 	}
 }
