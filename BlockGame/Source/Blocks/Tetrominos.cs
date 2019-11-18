@@ -1,9 +1,5 @@
-﻿using Nez.Textures;
-
-namespace BlockGame.Source.Blocks {
+﻿namespace BlockGame.Source.Blocks {
 	public static class Tetrominos {
-
-		public static string spriteLocation = "";
 
 		static (int, int)[][] normalOffsets = new (int, int)[][] {
 			new (int, int)[] { (0, 0), (0, 0), (0, 0), (0, 0), (0, 0) },
