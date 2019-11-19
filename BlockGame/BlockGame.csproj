@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EO.Pdf" Version="19.2.91" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Nez\Nez.Portable\Nez.csproj" />
   </ItemGroup>
 

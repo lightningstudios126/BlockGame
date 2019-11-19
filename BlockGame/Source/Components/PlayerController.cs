@@ -1,5 +1,4 @@
 ﻿using BlockGame.Source.Blocks;
-using EO.Internal;
 using Microsoft.Xna.Framework;
 using Nez;
 using Nez.AI.FSM;
