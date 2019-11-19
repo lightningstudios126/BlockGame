@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Nez;
 
-namespace BlockGameCore {
+namespace BlockGame {
 	public class BlockGame : Core {
 
 		public BlockGame() : base() {

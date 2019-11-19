@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BlockGameCore {
+namespace BlockGame {
 	public static class Program {
 		[STAThread]
 		static void Main() {

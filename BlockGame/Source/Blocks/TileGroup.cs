@@ -13,6 +13,7 @@ namespace BlockGame.Source.Blocks {
 		public Direction facing;
 
 		public Playfield playfield;
+		public bool Landed => !MoveDown(true);
 
 		public TileGroup(TileGroupDefinition groupDef, Point position, Direction facing = Direction.Up) {
 			this.groupDef = groupDef;
@@ -115,7 +116,7 @@ namespace BlockGame.Source.Blocks {
 			return Shift(new Point(-1, 0), simulate);
 		}
 
-		public Point GetGhostPosition () {
+		public Point GetLandedOffset() {
 			int downOffset = 0;
 			while (TestOffset(new Point(0, downOffset)))
 				downOffset--;

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BlockGame.Source.Blocks;
 using Microsoft.Xna.Framework;
 using Nez;
+using Nez.AI.FSM;
 using Nez.Textures;
 
 namespace BlockGame.Source.Components {
@@ -22,13 +23,24 @@ namespace BlockGame.Source.Components {
 		/// Index [0,y] corresponds to the left most column of the matrix.<br/>
 		/// </summary>
 		Tile[,] grid;
+		List<PlayerController> playerControllers;
 		List<TileGroup> tileGroups;
+
+		public enum PlayfieldState {
+			Gameplay, // controllers have control
+			Locked, // control is passed to the playfield
+			Match, // check matrix for patterns and mark delete
+			Animate, // fancy visual effects stuff
+			Clear, // delete blocks and update score, separate?
+			Complete // update information, then pass control back to controllers
+		}
 
 		public Playfield(int width = Constants.standardWidth, int height = Constants.standardHeight) {
 			this.width = width;
 			this.height = height;
 			this.grid = new Tile[width, height];
 
+			this.playerControllers = new List<PlayerController>();
 			this.tileGroups = new List<TileGroup>();
 		}
 
@@ -49,17 +61,9 @@ namespace BlockGame.Source.Components {
 			group.playfield = this;
 		}
 
-		private void FillWithRandom() {
-			Color[] colors = new Color[] { Constants.IColor, Constants.JColor, Constants.LColor, Constants.OColor, Constants.SColor, Constants.TColor, Constants.ZColor };
-			for (int i = 0; i < width; i++) {
-				for (int j = 0; j < height; j++) {
-					grid[i, j] = new Tile(colors[Nez.Random.NextInt(7)]);
-				}
-			}
-		}
-
 		public Tile[] this[int i] => Enumerable.Range(0, width).Select(x => grid[x, i]).ToArray();
-		/// <summary>Contains the indices of all the rows that are full</summary>
+
+		/// <summary>Returns the indices of all the rows that are full</summary>
 		public int[] FullRows => Enumerable.Range(0, height).Where(x => IsRowFull(x)).ToArray();
 
 		/// <summary>Checks and returns whether the row number <paramref name="row"/> is completely full of tiles</summary>
@@ -126,7 +130,7 @@ namespace BlockGame.Source.Components {
 			}
 
 			foreach (var group in tileGroups) {
-				var ghost = group.GetGhostPosition();
+				var ghost = group.GetLandedOffset();
 				foreach (Point point in group.shape) {
 					DrawTile(batcher, point + group.position, group.groupDef.type);
 					DrawTile(batcher, point + group.position + ghost, group.groupDef.type, true);

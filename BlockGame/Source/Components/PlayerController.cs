@@ -1,16 +1,13 @@
 ﻿using BlockGame.Source.Blocks;
+using EO.Internal;
+using Microsoft.Xna.Framework;
 using Nez;
+using Nez.AI.FSM;
 using System;
 using System.Collections.Generic;
 
 namespace BlockGame.Source.Components {
 	class PlayerController : Component, IUpdatable {
-		Playfield playfield;
-		TileGroup activeGroup;
-		Controls controls;
-
-		public NextQueue nextQueue;
-
 		/// <summary>
 		/// Automatic drop rate, measured in cells per 1/60th of a second
 		/// </summary>
@@ -30,26 +27,17 @@ namespace BlockGame.Source.Components {
 		public int maxMoveResets;
 
 		private bool doSoftDrop, doHardDrop;
-		private float timeAcc, lineAcc;
+		public bool MoveSucceeded { get; private set; }
 
-		private bool inFreefall;
+		Playfield playfield;
+		TileGroup activeGroup;
+		StateMachine<PlayerController> stateMachine;
 
-		float lockTimer;
-		int moveResets;
-		bool resetInputReceived;
-		int lowestRow;
+		public Controls controls;
+		public NextQueue nextQueue;
+		public HoldQueue holdQueue;
 
-		public enum ControllerState {
-			Generate,
-			Control,
-			Lock,
-			Match, 
-			Animate,
-			Clear,
-			Complete
-		}
-
-		public PlayerController(Playfield playfield, float gravity = 1f/60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 16) {
+		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 16) {
 			this.playfield = playfield;
 
 			this.gravity = gravity;
@@ -59,81 +47,35 @@ namespace BlockGame.Source.Components {
 		}
 
 		public override void OnAddedToEntity() {
-			controls = Entity.GetComponent<Controls>();
-			nextQueue ??= Entity.GetComponent<NextQueue>();
+			controls ??= Entity.GetComponent<Controls>();
+			Insist.IsNotNull(playfield);
+			Insist.IsNotNull(controls);
+			Insist.IsNotNull(nextQueue);
+			//Insist.IsNotNull(holdQueue);
+
+			stateMachine = new StateMachine<PlayerController>(this, new States.StateGenerate());
+			stateMachine.AddState(new States.StateGravitate());
+			stateMachine.AddState(new States.StateLock());
+			stateMachine.AddState(new States.StatePlayfield());
 		}
 
-		public override void OnEnabled() {
-			SetActiveGroup(Dequeue());
-		}
-
-		public void Update() { 
+		public void Update() {
 			UsePlayerInput();
-
-			if (inFreefall) {
-				Gravitate();
-				if (activeGroup.position.Y < lowestRow) {
-					lowestRow = activeGroup.position.Y;
-					moveResets = 0;
-				}
-			} else {
-				// move accumulator reset stuff to the enter-freefall phase of the state machine
-				timeAcc = 0;
-				lineAcc = 0;
-				Lock();
-			}
-
-			if (doHardDrop) {
-				LockActiveGroup();
-				doHardDrop = false;
-			}
-
-			inFreefall = activeGroup.MoveDown(true);
-		}
-
-		private void Gravitate() {
-			timeAcc += Time.DeltaTime;
-			if (doHardDrop) {
-				lineAcc += 20;
-			} else if (timeAcc >= Constants.sixtieth) {
-				timeAcc -= Constants.sixtieth;
-				if (doSoftDrop) {
-					lineAcc += gravity * softDropMultiplier;
-				} else lineAcc += gravity;
-			}
-
-			while (lineAcc >= 1) {
-				lineAcc--;
-				if (!activeGroup.MoveDown())
-					lineAcc %= 1;
-			}
-		}
-
-		private void Lock() {
-			lockTimer += Time.DeltaTime;
-
-			if (resetInputReceived) {
-				lockTimer = 0;
-				moveResets++;
-				resetInputReceived = false;
-			}
-
-			if (lockTimer >= lockDelay || moveResets == maxMoveResets) {
-				LockActiveGroup();
-			}
+			stateMachine.Update(Time.DeltaTime);
 		}
 
 		void UsePlayerInput() {
+			MoveSucceeded = false;
 			if (controls.MoveAxis.Value < 0) {
-				if (activeGroup.MoveLeft()) resetInputReceived = true;
+				if (activeGroup.MoveLeft()) MoveSucceeded = true;
 			} else if (controls.MoveAxis.Value > 0) {
-				if (activeGroup.MoveRight()) resetInputReceived = true;
+				if (activeGroup.MoveRight()) MoveSucceeded = true;
 			}
 
 			if (controls.LRotate.IsPressed) {
-				if (activeGroup.RotateLeft()) resetInputReceived = true;
+				if (activeGroup.RotateLeft()) MoveSucceeded = true;
 			} else if (controls.RRotate.IsPressed) {
-				if (activeGroup.RotateRight()) resetInputReceived = true;
+				if (activeGroup.RotateRight()) MoveSucceeded = true;
 			}
 
 			doSoftDrop = controls.SoftDrop.IsDown;
@@ -141,30 +83,112 @@ namespace BlockGame.Source.Components {
 				doHardDrop = true;
 
 			if (Input.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Up)) {
-				activeGroup.position = new Microsoft.Xna.Framework.Point(4, 19);
+				activeGroup.position = new Point(4, 19);
 			}
 		}
 
-		void SetActiveGroup(TileGroupDefinition groupDef) {
-			activeGroup = playfield.AddGroup(groupDef);
-			inFreefall = true;
+		internal static class States {
+			public enum ControllerState {
+				Generate, // control is restored, then a new group is instantiated from the next queue and assigned
+				Gravitate, // piece is falling and controllable
+				Lock, // piece is on the ground, counting down, and controllable
+				Playfield, // piece has been locked and control is passed to playfield
+			}
 
-			timeAcc = 0;
-			lineAcc = 1;
+			public class StateGenerate : State<PlayerController> {
+				public override void Begin() {
+					var groupDef = _context.nextQueue.GetNext();
+					_context.activeGroup = _context.playfield.AddGroup(groupDef);
+				}
 
-			lockTimer = 0;
-			lowestRow = activeGroup.position.Y;
-		}
+				public override void Reason() {
+					_machine.ChangeState<StateGravitate>().AddLine();
+				}
 
-		void LockActiveGroup() {
-			playfield.LockTileGroup(activeGroup);
-			SetActiveGroup(Dequeue());
-		}
+				public override void Update(float deltaTime) { }
+			}
 
-		// TODO: move next queue to a separate object so the controller doesn't need to handle it (i.e. more decoupling)
-		// TODO: maybe make the hold queue similar?
-		TileGroupDefinition Dequeue() {
-			return nextQueue.GetNext();
+			public class StateGravitate : State<PlayerController> {
+				private float timeAcc, lineAcc;
+				public override void Begin() {
+					timeAcc = 0;
+					lineAcc = 0;
+				}
+
+				public override void Update(float deltaTime) {
+					timeAcc += deltaTime;
+					if (_context.doHardDrop) {
+						lineAcc += 20;
+					} else if (timeAcc >= Constants.sixtieth) {
+						timeAcc -= Constants.sixtieth;
+						if (_context.doSoftDrop) {
+							lineAcc += _context.gravity * _context.softDropMultiplier;
+						} else lineAcc += _context.gravity;
+					}
+
+					while (lineAcc >= 1) {
+						lineAcc--;
+						// attempt move down by one
+						if (_context.activeGroup.Landed || _context.doHardDrop) {
+							// if it has already landed, then transition to the Lock state
+							var next = _machine.ChangeState<StateLock>();
+							if (_context.activeGroup.position.Y < next.lowestRow) {
+								next.lowestRow = _context.activeGroup.position.Y;
+								next.ResetMoveResets();
+							}
+						} else {
+							// if active group is not yet landed on a surface
+							// then try to move it down by one line
+							// if it can, then continue back into the loop
+							// otherwise, remove the integer part of lineAcc
+							if (!_context.activeGroup.MoveDown())
+								lineAcc %= 1;
+						}
+					}
+				}
+
+				internal void AddLine() => lineAcc++;
+			}
+
+			public class StateLock : State<PlayerController> {
+				private float lockTimer;
+				private int moveResets;
+				internal int lowestRow;
+
+				public override void Update(float deltaTime) {
+					lockTimer += deltaTime;
+
+					if (_context.MoveSucceeded) {
+						lockTimer = 0;
+						moveResets++;
+					}
+
+					if (_context.doHardDrop || lockTimer >= _context.lockDelay || moveResets == _context.maxMoveResets) {
+						_context.doHardDrop = false;
+						_context.playfield.LockTileGroup(_context.activeGroup);
+						_machine.ChangeState<StatePlayfield>();
+					}
+				}
+
+				public void ResetMoveResets() {
+					moveResets = 0;
+				}
+			}
+
+			public class StatePlayfield : State<PlayerController> {
+				bool isLocked;
+				public override void OnInitialized() {
+					//_context.playfield
+				}
+
+				public override void Begin() {
+					isLocked = true;
+				}
+
+				public override void Update(float deltaTime) {
+					throw new NotImplementedException();
+				}
+			}
 		}
 	}
 }
