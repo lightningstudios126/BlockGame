@@ -26,14 +26,7 @@ namespace BlockGame.Source.Components {
 		List<PlayerController> playerControllers;
 		List<TileGroup> tileGroups;
 
-		public enum PlayfieldState {
-			Gameplay, // controllers have control
-			Locked, // control is passed to the playfield
-			Match, // check matrix for patterns and mark delete
-			Animate, // fancy visual effects stuff
-			Clear, // delete blocks and update score, separate?
-			Complete // update information, then pass control back to controllers
-		}
+		StateMachine<Playfield> stateMachine;
 
 		public Playfield(int width = Constants.standardWidth, int height = Constants.standardHeight) {
 			this.width = width;
@@ -42,6 +35,10 @@ namespace BlockGame.Source.Components {
 
 			this.playerControllers = new List<PlayerController>();
 			this.tileGroups = new List<TileGroup>();
+		}
+
+		public override void OnAddedToEntity() {
+			stateMachine = new StateMachine<Playfield>(this, new States.StateGameplay());
 		}
 
 		// HACK: properly integrate state machine in game for potential multiplayer
@@ -154,6 +151,30 @@ namespace BlockGame.Source.Components {
 				Enumerable.Range(0, height).Reverse().Select(
 					y => Enumerable.Range(0, width).Reverse().Select(x => grid[x, y])
 				).Select(x => string.Join(" ", x)));
+		}
+
+		public void StartSequence() {
+
+		}
+
+
+		// do i really need a state machine?
+		// the sequence is entirely linear
+		private static class States {
+			public enum PlayfieldState {
+				Gameplay, // controllers have control
+				Locked, // control is passed to the playfield
+				Match, // check matrix for patterns and mark delete
+				Animate, // fancy visual effects stuff
+				Clear, // delete blocks and update score, separate?
+				Complete // update information, then pass control back to controllers
+			}
+
+			public class StateGameplay : State<Playfield> {
+				public override void Update(float deltaTime) {
+					throw new NotImplementedException();
+				}
+			}
 		}
 	}
 }

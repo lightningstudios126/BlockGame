@@ -26,7 +26,7 @@ namespace BlockGame.Source.Components {
 		public int maxMoveResets;
 
 		private bool doSoftDrop, doHardDrop;
-		public bool MoveSucceeded { get; private set; }
+		private bool moveSucceeded;
 
 		Playfield playfield;
 		TileGroup activeGroup;
@@ -36,7 +36,9 @@ namespace BlockGame.Source.Components {
 		public NextQueue nextQueue;
 		public HoldQueue holdQueue;
 
-		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 16) {
+		event Action GeneratedNewPiece;
+
+		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 15) {
 			this.playfield = playfield;
 
 			this.gravity = gravity;
@@ -50,7 +52,7 @@ namespace BlockGame.Source.Components {
 			Insist.IsNotNull(playfield);
 			Insist.IsNotNull(controls);
 			Insist.IsNotNull(nextQueue);
-			//Insist.IsNotNull(holdQueue);
+			//Insist.IsNotNull(holdQueue); 
 
 			stateMachine = new StateMachine<PlayerController>(this, new States.StateGenerate());
 			stateMachine.AddState(new States.StateGravitate());
@@ -64,17 +66,17 @@ namespace BlockGame.Source.Components {
 		}
 
 		void UsePlayerInput() {
-			MoveSucceeded = false;
+			moveSucceeded = false;
 			if (controls.MoveAxis.Value < 0) {
-				if (activeGroup.MoveLeft()) MoveSucceeded = true;
+				if (activeGroup.MoveLeft()) moveSucceeded = true;
 			} else if (controls.MoveAxis.Value > 0) {
-				if (activeGroup.MoveRight()) MoveSucceeded = true;
+				if (activeGroup.MoveRight()) moveSucceeded = true;
 			}
 
 			if (controls.LRotate.IsPressed) {
-				if (activeGroup.RotateLeft()) MoveSucceeded = true;
+				if (activeGroup.RotateLeft()) moveSucceeded = true;
 			} else if (controls.RRotate.IsPressed) {
-				if (activeGroup.RotateRight()) MoveSucceeded = true;
+				if (activeGroup.RotateRight()) moveSucceeded = true;
 			}
 
 			doSoftDrop = controls.SoftDrop.IsDown;
@@ -86,14 +88,7 @@ namespace BlockGame.Source.Components {
 			}
 		}
 
-		internal static class States {
-			public enum ControllerState {
-				Generate, // control is restored, then a new group is instantiated from the next queue and assigned
-				Gravitate, // piece is falling and controllable
-				Lock, // piece is on the ground, counting down, and controllable
-				Playfield, // piece has been locked and control is passed to playfield
-			}
-
+		private static class States {
 			public class StateGenerate : State<PlayerController> {
 				public override void Begin() {
 					var groupDef = _context.nextQueue.GetNext();
@@ -105,6 +100,9 @@ namespace BlockGame.Source.Components {
 				}
 
 				public override void Update(float deltaTime) { }
+				public override void End() {
+					_context.GeneratedNewPiece();
+				}
 			}
 
 			public class StateGravitate : State<PlayerController> {
@@ -127,21 +125,15 @@ namespace BlockGame.Source.Components {
 
 					while (lineAcc >= 1) {
 						lineAcc--;
-						// attempt move down by one
-						if (_context.activeGroup.Landed || _context.doHardDrop) {
-							// if it has already landed, then transition to the Lock state
-							var next = _machine.ChangeState<StateLock>();
-							if (_context.activeGroup.position.Y < next.lowestRow) {
-								next.lowestRow = _context.activeGroup.position.Y;
-								next.ResetMoveResets();
-							}
-						} else {
-							// if active group is not yet landed on a surface
-							// then try to move it down by one line
-							// if it can, then continue back into the loop
-							// otherwise, remove the integer part of lineAcc
-							if (!_context.activeGroup.MoveDown())
-								lineAcc %= 1;
+						if (!_context.activeGroup.MoveDown())
+							lineAcc %= 1;
+					}
+
+					if (_context.activeGroup.Landed) {
+						var next = _machine.ChangeState<StateLock>();
+						if (_context.activeGroup.position.Y < next.lowestRow) {
+							next.lowestRow = _context.activeGroup.position.Y;
+							next.ResetMoveResets();
 						}
 					}
 				}
@@ -154,15 +146,24 @@ namespace BlockGame.Source.Components {
 				private int moveResets;
 				internal int lowestRow;
 
+				public override void OnInitialized() {
+					_context.GeneratedNewPiece += () => {
+						lockTimer = 0;
+						moveResets = 0;
+						lowestRow = int.MaxValue;
+					};
+				}
+
 				public override void Update(float deltaTime) {
 					lockTimer += deltaTime;
 
-					if (_context.MoveSucceeded) {
+					if (_context.moveSucceeded) {
 						lockTimer = 0;
 						moveResets++;
-					}
-
-					if (_context.doHardDrop || lockTimer >= _context.lockDelay || moveResets == _context.maxMoveResets) {
+						if (!_context.activeGroup.Landed) {
+							_machine.ChangeState<StateGravitate>();
+						}
+					} else if (_context.doHardDrop || lockTimer >= _context.lockDelay || moveResets >= _context.maxMoveResets) {
 						_context.doHardDrop = false;
 						_context.playfield.LockTileGroup(_context.activeGroup);
 						_machine.ChangeState<StatePlayfield>();
@@ -176,16 +177,18 @@ namespace BlockGame.Source.Components {
 
 			public class StatePlayfield : State<PlayerController> {
 				bool isLocked;
-				public override void OnInitialized() {
-					//_context.playfield
-				}
 
 				public override void Begin() {
 					isLocked = true;
+					_context.playfield.StartSequence();
+				}
+
+				public override void Reason() {
+					if (!isLocked) _machine.ChangeState<StateGenerate>();
 				}
 
 				public override void Update(float deltaTime) {
-					throw new NotImplementedException();
+
 				}
 			}
 		}
