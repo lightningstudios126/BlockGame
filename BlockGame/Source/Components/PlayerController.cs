@@ -39,7 +39,7 @@ namespace BlockGame.Source.Components {
 		event Action GeneratedNewPiece;
 		event Action LockedPiece;
 
-		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 100, float lockDelay = 0.5f, int maxMoveResets = 15) {
+		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 15) {
 			this.playfield = playfield;
 
 			this.gravity = gravity;
