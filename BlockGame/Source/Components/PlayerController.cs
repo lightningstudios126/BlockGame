@@ -25,7 +25,7 @@ namespace BlockGame.Source.Components {
 		/// </summary>
 		public int maxMoveResets;
 
-		private bool doSoftDrop, doHardDrop;
+		private bool doSoftDrop, doHardDrop, doHold;
 		private bool moveSucceeded;
 
 		Playfield playfield;
@@ -37,8 +37,9 @@ namespace BlockGame.Source.Components {
 		public HoldQueue holdQueue;
 
 		event Action GeneratedNewPiece;
+		event Action LockedPiece;
 
-		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 15) {
+		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 100, float lockDelay = 0.5f, int maxMoveResets = 15) {
 			this.playfield = playfield;
 
 			this.gravity = gravity;
@@ -58,10 +59,23 @@ namespace BlockGame.Source.Components {
 			stateMachine.AddState(new States.StateGravitate());
 			stateMachine.AddState(new States.StateLock());
 			stateMachine.AddState(new States.StatePlayfield());
+
+			if (holdQueue != null) LockedPiece += holdQueue.Unlock;
+
+			playfield.StartedProcessing += () => this.SetEnabled(false);
+			playfield.FinishedProcessing += () => this.SetEnabled(true);
 		}
 
 		public void Update() {
 			UsePlayerInput();
+			if (doHold) {
+				if (holdQueue.Swap(activeGroup.groupDef, out var swapped)) {
+					playfield.RemoveGroup(activeGroup);
+					var nextState = stateMachine.ChangeState<States.StateGenerate>();
+					if (swapped != null) nextState.ProvidePiece(swapped);
+				}
+				doHold = false;
+			}
 			stateMachine.Update(Time.DeltaTime);
 		}
 
@@ -79,29 +93,30 @@ namespace BlockGame.Source.Components {
 				if (activeGroup.RotateRight()) moveSucceeded = true;
 			}
 
-			doSoftDrop = controls.SoftDrop.IsDown;
+			doHold = controls.Hold.IsPressed;
+			doSoftDrop = controls.SoftDrop;
 			if (controls.HardDrop.IsPressed)
 				doHardDrop = true;
-
-			if (Input.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Up)) {
-				activeGroup.position = new Point(4, 19);
-			}
 		}
 
 		private static class States {
 			public class StateGenerate : State<PlayerController> {
-				public override void Begin() {
-					var groupDef = _context.nextQueue.GetNext();
-					_context.activeGroup = _context.playfield.AddGroup(groupDef);
-				}
+				TileGroupDefinition def;
 
 				public override void Reason() {
+					def ??= _context.nextQueue.GetNext();
+					_context.activeGroup = _context.playfield.AddGroup(def);
+					def = null;
 					_machine.ChangeState<StateGravitate>().AddLine();
 				}
 
 				public override void Update(float deltaTime) { }
 				public override void End() {
 					_context.GeneratedNewPiece();
+				}
+
+				public void ProvidePiece(TileGroupDefinition def) {
+					this.def = def;
 				}
 			}
 
@@ -144,7 +159,7 @@ namespace BlockGame.Source.Components {
 			public class StateLock : State<PlayerController> {
 				private float lockTimer;
 				private int moveResets;
-				internal int lowestRow;
+				public int lowestRow;
 
 				public override void OnInitialized() {
 					_context.GeneratedNewPiece += () => {
@@ -167,6 +182,7 @@ namespace BlockGame.Source.Components {
 						_context.doHardDrop = false;
 						_context.playfield.LockTileGroup(_context.activeGroup);
 						_machine.ChangeState<StatePlayfield>();
+						_context.LockedPiece();
 					}
 				}
 
@@ -176,20 +192,15 @@ namespace BlockGame.Source.Components {
 			}
 
 			public class StatePlayfield : State<PlayerController> {
-				bool isLocked;
-
 				public override void Begin() {
-					isLocked = true;
 					_context.playfield.StartSequence();
 				}
 
 				public override void Reason() {
-					if (!isLocked) _machine.ChangeState<StateGenerate>();
+					_machine.ChangeState<StateGenerate>();
 				}
 
-				public override void Update(float deltaTime) {
-
-				}
+				public override void Update(float deltaTime) { }
 			}
 		}
 	}

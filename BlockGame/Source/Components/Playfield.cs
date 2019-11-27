@@ -14,7 +14,7 @@ namespace BlockGame.Source.Components {
 	/// For a standard field height, row 20 is the highest row fully visible.<br/>
 	/// Row 21 should be only partially displayed.<br/>
 	/// </summary>
-	class Playfield : RenderableComponent, IUpdatable {
+	class Playfield : RenderableComponent {
 		int width, height;
 
 		/// <summary>
@@ -23,28 +23,17 @@ namespace BlockGame.Source.Components {
 		/// Index [0,y] corresponds to the left most column of the matrix.<br/>
 		/// </summary>
 		Tile[,] grid;
-		List<PlayerController> playerControllers;
 		List<TileGroup> tileGroups;
 
-		StateMachine<Playfield> stateMachine;
+		public event Action StartedProcessing;
+		public event Action FinishedProcessing;
 
 		public Playfield(int width = Constants.standardWidth, int height = Constants.standardHeight) {
 			this.width = width;
 			this.height = height;
 			this.grid = new Tile[width, height];
-
-			this.playerControllers = new List<PlayerController>();
+			
 			this.tileGroups = new List<TileGroup>();
-		}
-
-		public override void OnAddedToEntity() {
-			stateMachine = new StateMachine<Playfield>(this, new States.StateGameplay());
-		}
-
-		// HACK: properly integrate state machine in game for potential multiplayer
-		public void Update() {
-			if (FullRows.Length > 0)
-				ClearAndDropLines(FullRows);
 		}
 
 		public TileGroup AddGroup(TileGroupDefinition def) {
@@ -56,6 +45,10 @@ namespace BlockGame.Source.Components {
 		public void AddGroup(TileGroup group) {
 			tileGroups.Add(group);
 			group.playfield = this;
+		}
+
+		public void RemoveGroup(TileGroup group) {
+			tileGroups.Remove(group);
 		}
 
 		public Tile[] this[int i] => Enumerable.Range(0, width).Select(x => grid[x, i]).ToArray();
@@ -110,8 +103,6 @@ namespace BlockGame.Source.Components {
 				var absPos = pos + group.position;
 				grid[absPos.X, absPos.Y] = group.groupDef.type;
 			}
-
-			group.groupDef.type.color = Nez.Random.NextColor();
 		}
 
 		public override float Height => Constants.pixelsPerTile * height;
@@ -153,28 +144,20 @@ namespace BlockGame.Source.Components {
 				).Select(x => string.Join(" ", x)));
 		}
 
-		public void StartSequence() {
-
+		public enum PlayfieldState {
+			Gameplay, // controllers have control
+			Locked, // control is passed to the playfield
+			Match, // check matrix for patterns and mark delete, instant
+			Animate, // fancy visual effects stuff, delayed
+			Clear, // delete blocks and update score, separate?, instant
+			Complete // update information, then pass control back to controllers
 		}
 
-
-		// do i really need a state machine?
-		// the sequence is entirely linear
-		private static class States {
-			public enum PlayfieldState {
-				Gameplay, // controllers have control
-				Locked, // control is passed to the playfield
-				Match, // check matrix for patterns and mark delete
-				Animate, // fancy visual effects stuff
-				Clear, // delete blocks and update score, separate?
-				Complete // update information, then pass control back to controllers
-			}
-
-			public class StateGameplay : State<Playfield> {
-				public override void Update(float deltaTime) {
-					throw new NotImplementedException();
-				}
-			}
+		public void StartSequence() {
+			StartedProcessing();
+			if (FullRows.Length > 0)
+				ClearAndDropLines(FullRows);
+			FinishedProcessing();
 		}
 	}
 }

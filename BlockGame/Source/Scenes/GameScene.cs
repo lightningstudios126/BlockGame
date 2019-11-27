@@ -22,13 +22,14 @@ namespace BlockGame.Source.Scenes {
 			base.Initialize();
 			randomizer = Randomizers.BagRandomizer;
 
-			field = CreateEntity("grid", new Vector2(500, 620)).AddComponent(new Playfield());
+			field = CreateEntity("grid", new Vector2(350, 620)).AddComponent(new Playfield(8));
 			var localNextQueue = CreateEntity("next-queue", new Vector2(850, 30))
 				.AddComponent(new NextQueue(randomizer, options: Tetrominos.tetrominos));
+			var localHoldQueue = CreateEntity("hold-queue").AddComponent(new HoldQueue());
 
 			controller = CreateEntity("group-controller");
 			controller.AddComponent(new KeyboardControls());
-			controller.AddComponent(new PlayerController(field) { nextQueue = localNextQueue });
+			controller.AddComponent(new PlayerController(field) { nextQueue = localNextQueue, holdQueue = localHoldQueue });
 
 		}
 
