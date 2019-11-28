@@ -15,7 +15,7 @@ namespace BlockGame.Source.Components {
 		/// </summary>
 		public VirtualIntegerAxis MoveAxis { get; protected set; }
 
-		public override void Initialize() {
+		protected Controls() {
 			LMove = new VirtualButton();
 			RMove = new VirtualButton();
 			LRotate = new VirtualButton();
@@ -24,10 +24,7 @@ namespace BlockGame.Source.Components {
 			SoftDrop = new VirtualButton();
 			HardDrop = new VirtualButton();
 			MoveAxis = new VirtualIntegerAxis(new RepeatingButtonAxis(LMove, RMove));
-			this._Initialize();
 		}
-
-		protected abstract void _Initialize();
 
 		public class RepeatingButtonAxis : VirtualAxis.Node {
 			public override float Value => _value;

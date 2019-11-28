@@ -36,8 +36,8 @@ namespace BlockGame.Source.Components {
 		public NextQueue nextQueue;
 		public HoldQueue holdQueue;
 
-		event Action GeneratedNewPiece;
-		event Action LockedPiece;
+		event Action<TileGroup> GeneratedNewPiece;
+		event Action<TileGroup> LockedPiece;
 
 		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 15) {
 			this.playfield = playfield;
@@ -60,7 +60,7 @@ namespace BlockGame.Source.Components {
 			stateMachine.AddState(new States.StateLock());
 			stateMachine.AddState(new States.StatePlayfield());
 
-			if (holdQueue != null) LockedPiece += holdQueue.Unlock;
+			if (holdQueue != null) LockedPiece += (x => holdQueue.Unlock());
 
 			playfield.StartedProcessing += () => this.SetEnabled(false);
 			playfield.FinishedProcessing += () => this.SetEnabled(true);
@@ -112,7 +112,7 @@ namespace BlockGame.Source.Components {
 
 				public override void Update(float deltaTime) { }
 				public override void End() {
-					_context.GeneratedNewPiece();
+					_context.GeneratedNewPiece(_context.activeGroup);
 				}
 
 				public void ProvidePiece(TileGroupDefinition def) {
@@ -162,7 +162,7 @@ namespace BlockGame.Source.Components {
 				public int lowestRow;
 
 				public override void OnInitialized() {
-					_context.GeneratedNewPiece += () => {
+					_context.GeneratedNewPiece += (x) => {
 						lockTimer = 0;
 						moveResets = 0;
 						lowestRow = int.MaxValue;
@@ -182,7 +182,7 @@ namespace BlockGame.Source.Components {
 						_context.doHardDrop = false;
 						_context.playfield.LockTileGroup(_context.activeGroup);
 						_machine.ChangeState<StatePlayfield>();
-						_context.LockedPiece();
+						_context.LockedPiece(_context.activeGroup);
 					}
 				}
 
