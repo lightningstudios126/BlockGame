@@ -30,7 +30,7 @@ namespace BlockGame.Source.Scenes {
 				var localHoldQueue = CreateEntity("hold-queue", new Vector2(50, 30)).AddComponent(new HoldQueue());
 
 				controller1 = CreateEntity("group-controller");
-				controller1.AddComponent(new KeyboardControls(lMov: Keys.F, rMov: Keys.H, softDrop: Keys.G, hardDrop: Keys.T));
+				controller1.AddComponent(new KeyboardControls(lMov: Keys.F, rMov: Keys.H, softDrop: Keys.G, hardDrop: Keys.T, delayedAutoShift: 170, autoRepeatRate: 50));
 				controller1.AddComponent(new PlayerController(field) { nextQueue = localNextQueue, holdQueue = localHoldQueue });
 			}
 
@@ -40,11 +40,11 @@ namespace BlockGame.Source.Scenes {
 				var localHoldQueue = CreateEntity("hold-queue", new Vector2(1100, 30)).AddComponent(new HoldQueue());
 
 				controller2 = CreateEntity("group-controller");
-				controller2.AddComponent(new KeyboardControls(lRot: Keys.OemComma, rRot: Keys.OemPeriod, hold: Keys.OemQuestion, hardDrop: Keys.Up));
+				controller2.AddComponent(new KeyboardControls(lRot: Keys.OemComma, rRot: Keys.OemPeriod, hold: Keys.OemQuestion, hardDrop: Keys.Up, delayedAutoShift: 170, autoRepeatRate: 50));
 				controller2.AddComponent(new PlayerController(field) { nextQueue = localNextQueue, holdQueue = localHoldQueue });
 			}
 
-
+			Camera.AddComponent<MouseLocator>();
 		}
 
 		public override void OnStart() {
