@@ -30,7 +30,7 @@ namespace BlockGame.Source.Scenes {
 				var localHoldQueue = CreateEntity("hold-queue", new Vector2(50, 30)).AddComponent(new HoldQueue());
 
 				controller1 = CreateEntity("group-controller");
-				controller1.AddComponent(new KeyboardControls(lMov: Keys.F, rMov: Keys.H, softDrop: Keys.G, hardDrop: Keys.T, delayedAutoShift: 170, autoRepeatRate: 50));
+				controller1.AddComponent(new KeyboardControls(lMov: Keys.A, rMov: Keys.D, softDrop: Keys.S, hardDrop: Keys.W, lRot: Keys.D1, rRot: Keys.D2, hold: Keys.D3, delayedAutoShift: 170, autoRepeatRate: 50));
 				controller1.AddComponent(new PlayerController(field) { nextQueue = localNextQueue, holdQueue = localHoldQueue });
 			}
 

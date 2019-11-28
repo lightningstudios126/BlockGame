@@ -120,6 +120,10 @@ namespace BlockGame.Source.Components {
 			foreach (var group in tileGroups) {
 				var ghost = group.GetLandedOffset();
 				foreach (Point point in group.shape) {
+					DrawOutline(batcher, point + group.position, Color.White, 5);
+					DrawOutline(batcher, point + group.position + ghost, Color.White, 5);
+				}
+				foreach (Point point in group.shape) {
 					DrawTile(batcher, point + group.position, group.groupDef.type);
 					DrawTile(batcher, point + group.position + ghost, group.groupDef.type, true);
 				}
@@ -135,6 +139,11 @@ namespace BlockGame.Source.Components {
 			Point offset = new Point(Constants.pixelsPerTile * gridLocation.X, -Constants.pixelsPerTile * gridLocation.Y);
 			var texture = Entity.Scene.Content.LoadTexture(tile.spriteLocation);
 			batcher.Draw(texture, new Rectangle((offset.ToVector2() + Transform.Position).RoundToPoint(), new Point(Constants.pixelsPerTile)), ghost ? tile.ghostColor : tile.color);
+		}
+
+		public void DrawOutline(Batcher batcher, Point gridLocation, Color color, int thickness = 1) {
+			Point offset = new Point(Constants.pixelsPerTile * gridLocation.X, -Constants.pixelsPerTile * gridLocation.Y);
+			batcher.DrawHollowRect(new Rectangle((offset.ToVector2() + Transform.Position).RoundToPoint(), new Point(Constants.pixelsPerTile)), color, thickness);
 		}
 
 		public override string ToString() {
