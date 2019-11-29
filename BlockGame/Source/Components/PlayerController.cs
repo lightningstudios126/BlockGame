@@ -28,8 +28,11 @@ namespace BlockGame.Source.Components {
 		private bool doSoftDrop, doHardDrop, doHold;
 		private bool moveSucceeded;
 
+		public TileGroup activeGroup;
+		public Color outlineTint;
+		public Point spawnLocation;
+
 		Playfield playfield;
-		TileGroup activeGroup;
 		StateMachine<PlayerController> stateMachine;
 
 		public Controls controls;
@@ -38,6 +41,7 @@ namespace BlockGame.Source.Components {
 
 		event Action<TileGroup> GeneratedNewPiece;
 		event Action<TileGroup> LockedPiece;
+		event Action<TileGroup> Displaced;
 
 		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 15) {
 			this.playfield = playfield;
@@ -46,6 +50,9 @@ namespace BlockGame.Source.Components {
 			this.softDropMultiplier = softDropMultiplier;
 			this.lockDelay = lockDelay;
 			this.maxMoveResets = maxMoveResets;
+
+			outlineTint = Color.White;
+			spawnLocation = Constants.defaultGenerationLocation;
 		}
 
 		public override void OnAddedToEntity() {
@@ -64,17 +71,28 @@ namespace BlockGame.Source.Components {
 
 			playfield.StartedProcessing += () => this.SetEnabled(false);
 			playfield.FinishedProcessing += () => this.SetEnabled(true);
+			playfield.AddPlayer(this);
 		}
 
 		public void Update() {
 			UsePlayerInput();
 			if (doHold) {
 				if (holdQueue.Swap(activeGroup.groupDef, out var swapped)) {
-					playfield.RemoveGroup(activeGroup);
 					var nextState = stateMachine.ChangeState<States.StateGenerate>();
 					if (swapped != null) nextState.ProvidePiece(swapped);
 				}
 				doHold = false;
+			}
+			if (activeGroup != null) {
+				// if current overlapping terrain, then shift up
+				if (!activeGroup.TestOffset(new Point(0, 0))) {
+					int upOffset = 1;
+					while (!activeGroup.TestOffset(new Point(0, upOffset))) {
+						upOffset++;
+					}
+					activeGroup.Shift(new Point(0, upOffset));
+					Displaced(activeGroup);
+				}
 			}
 			stateMachine.Update(Time.DeltaTime);
 		}
@@ -105,7 +123,7 @@ namespace BlockGame.Source.Components {
 
 				public override void Reason() {
 					def ??= _context.nextQueue.GetNext();
-					_context.activeGroup = _context.playfield.AddGroup(def);
+					_context.activeGroup = _context.playfield.SpawnTileGroup(def, _context.spawnLocation);
 					def = null;
 					_machine.ChangeState<StateGravitate>().AddLine();
 				}
@@ -153,7 +171,7 @@ namespace BlockGame.Source.Components {
 					}
 				}
 
-				internal void AddLine() => lineAcc++;
+				public void AddLine() => lineAcc++;
 			}
 
 			public class StateLock : State<PlayerController> {
@@ -162,11 +180,8 @@ namespace BlockGame.Source.Components {
 				public int lowestRow;
 
 				public override void OnInitialized() {
-					_context.GeneratedNewPiece += (x) => {
-						lockTimer = 0;
-						moveResets = 0;
-						lowestRow = int.MaxValue;
-					};
+					_context.GeneratedNewPiece += (x) => ResetAll();
+					_context.Displaced += (x) => ResetAll();
 				}
 
 				public override void Update(float deltaTime) {
@@ -188,6 +203,12 @@ namespace BlockGame.Source.Components {
 
 				public void ResetMoveResets() {
 					moveResets = 0;
+				}
+
+				public void ResetAll() {
+					lockTimer = 0;
+					moveResets = 0;
+					lowestRow = int.MaxValue;
 				}
 			}
 

@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using BlockGame.Source.Blocks;
 using Microsoft.Xna.Framework;
 using Nez;
-using Nez.AI.FSM;
-using Nez.Textures;
 
 namespace BlockGame.Source.Components {
 	/// <summary>
@@ -15,7 +11,7 @@ namespace BlockGame.Source.Components {
 	/// Row 21 should be only partially displayed.<br/>
 	/// </summary>
 	class Playfield : RenderableComponent {
-		int width, height;
+		int width, height, skyline;
 
 		/// <summary>
 		/// The data structure representing the contents of the Playfield.<br/>
@@ -23,32 +19,34 @@ namespace BlockGame.Source.Components {
 		/// Index [0,y] corresponds to the left most column of the matrix.<br/>
 		/// </summary>
 		Tile[,] grid;
-		List<TileGroup> tileGroups;
+		List<PlayerController> players;
 
 		public event Action StartedProcessing;
 		public event Action FinishedProcessing;
 
-		public Playfield(int width = Constants.standardWidth, int height = Constants.standardHeight) {
+		Color backgroundColor = new Color(30, 30, 30);
+
+		public Playfield(int width = Constants.standardWidth, int height = Constants.standardHeight, int skyline = 20) {
 			this.width = width;
 			this.height = height;
+			this.skyline = skyline;
 			this.grid = new Tile[width, height];
-			
-			this.tileGroups = new List<TileGroup>();
+
+			this.players = new List<PlayerController>();
 		}
 
-		public TileGroup AddGroup(TileGroupDefinition def) {
-			TileGroup group = new TileGroup(def, Constants.defaultGenerationLocation);
-			this.AddGroup(group);
+		public TileGroup SpawnTileGroup(TileGroupDefinition def) {
+			return SpawnTileGroup(def, Constants.defaultGenerationLocation);
+		}
+
+		public TileGroup SpawnTileGroup(TileGroupDefinition def, Point spawnLocation) {
+			TileGroup group = new TileGroup(def, spawnLocation);
+			group.playfield = this;
 			return group;
 		}
 
-		public void AddGroup(TileGroup group) {
-			tileGroups.Add(group);
-			group.playfield = this;
-		}
-
-		public void RemoveGroup(TileGroup group) {
-			tileGroups.Remove(group);
+		public void AddPlayer(PlayerController player) {
+			players.Add(player);
 		}
 
 		public Tile[] this[int i] => Enumerable.Range(0, width).Select(x => grid[x, i]).ToArray();
@@ -65,7 +63,7 @@ namespace BlockGame.Source.Components {
 		/// <param name="p">Position to test</param>
 		/// <param name="includeGroups">Should include tile groups when checking</param>
 		/// <returns>whether the <paramref name="p"/> is occupied</returns>
-		public bool IsPointIncluded(Point p, bool includeGroups = false) => grid[p.X, p.Y] != null || (includeGroups ? tileGroups.Any(t => t.shape.Any(i => p == i)) : false);
+		public bool IsPointIncluded(Point p, bool includeGroups = false) => grid[p.X, p.Y] != null || (includeGroups ? players.Select(x => x.activeGroup).Any(t => t.shape.Any(i => p == i)) : false);
 
 		/// <summary>Returns true if the position <paramref name="p"/> is out of bounds defined by the Playfield's height and width</summary>
 		/// <param name="p">Position to test</param>
@@ -98,7 +96,6 @@ namespace BlockGame.Source.Components {
 		/// </summary>
 		/// <param name="group">Group to lock</param>
 		public void LockTileGroup(TileGroup group) {
-			tileGroups.Remove(group);
 			foreach (var pos in group.shape) {
 				var absPos = pos + group.position;
 				grid[absPos.X, absPos.Y] = group.groupDef.type;
@@ -109,36 +106,36 @@ namespace BlockGame.Source.Components {
 		public override float Width => Constants.pixelsPerTile * width;
 		public override void Render(Batcher batcher, Camera camera) {
 			batcher.DrawCircle(Transform.Position, 2, Color.Red);
-			batcher.DrawRect(new Rectangle(Transform.Position.RoundToPoint() - new Point(0, (height - 1) * Constants.pixelsPerTile), new Point(width * Constants.pixelsPerTile, height * Constants.pixelsPerTile)), Color.MediumPurple);
+			batcher.DrawRect(new Rectangle(Transform.Position.RoundToPoint() - new Point(0, (height - 1) * Constants.pixelsPerTile), new Point(width * Constants.pixelsPerTile, height * Constants.pixelsPerTile)), backgroundColor);
 
 			for (int y = 0; y < height; y++) {
 				for (int x = 0; x < width; x++) {
-					DrawTile(batcher, new Point(x, y));
+					DrawGridTile(batcher, new Point(x, y));
 				}
 			}
 
-			foreach (var group in tileGroups) {
-				var ghost = group.GetLandedOffset();
-				foreach (Point point in group.shape) {
-					DrawOutline(batcher, point + group.position, Color.White, 5);
-					DrawOutline(batcher, point + group.position + ghost, Color.White, 5);
-				}
-				foreach (Point point in group.shape) {
-					DrawTile(batcher, point + group.position, group.groupDef.type);
-					DrawTile(batcher, point + group.position + ghost, group.groupDef.type, true);
+			foreach (var player in players) {
+				var group = player.activeGroup;
+				if (group != null) {
+					var ghost = group.GetLandedOffset();
+					foreach (Point point in group.shape) {
+						DrawOutline(batcher, point + group.position, player.outlineTint, 5);
+						DrawOutline(batcher, point + group.position + ghost, player.outlineTint, 5);
+					}
+					foreach (Point point in group.shape) {
+						Utilities.DrawTile(batcher, point + group.position + ghost, Transform.Position.ToPoint(), group.groupDef.type, group.groupDef.type.ghostColor);
+					}
+					foreach (Point point in group.shape) {
+						Utilities.DrawTile(batcher, point + group.position, Transform.Position.ToPoint(), group.groupDef.type);
+					}
 				}
 			}
 		}
 
-		public void DrawTile(Batcher batcher, Point gridLocation) {
+		public void DrawGridTile(Batcher batcher, Point gridLocation) {
 			Tile tile = grid[gridLocation.X, gridLocation.Y];
-			if (tile != null) DrawTile(batcher, gridLocation, tile);
-		}
-
-		public void DrawTile(Batcher batcher, Point gridLocation, Tile tile, bool ghost = false) {
-			Point offset = new Point(Constants.pixelsPerTile * gridLocation.X, -Constants.pixelsPerTile * gridLocation.Y);
-			var texture = Entity.Scene.Content.LoadTexture(tile.spriteLocation);
-			batcher.Draw(texture, new Rectangle((offset.ToVector2() + Transform.Position).RoundToPoint(), new Point(Constants.pixelsPerTile)), ghost ? tile.ghostColor : tile.color);
+			if (tile != null)
+				Utilities.DrawTile(batcher, gridLocation, Transform.Position.ToPoint(), tile);
 		}
 
 		public void DrawOutline(Batcher batcher, Point gridLocation, Color color, int thickness = 1) {

@@ -31,7 +31,7 @@ namespace BlockGame.Source.Scenes {
 
 				controller1 = CreateEntity("group-controller");
 				controller1.AddComponent(new KeyboardControls(lMov: Keys.A, rMov: Keys.D, softDrop: Keys.S, hardDrop: Keys.W, lRot: Keys.D1, rRot: Keys.D2, hold: Keys.D3, delayedAutoShift: 170, autoRepeatRate: 50));
-				controller1.AddComponent(new PlayerController(field) { nextQueue = localNextQueue, holdQueue = localHoldQueue });
+				controller1.AddComponent(new PlayerController(field) { nextQueue = localNextQueue, holdQueue = localHoldQueue, outlineTint = Color.OrangeRed });
 			}
 
 			{
@@ -40,8 +40,8 @@ namespace BlockGame.Source.Scenes {
 				var localHoldQueue = CreateEntity("hold-queue", new Vector2(1100, 30)).AddComponent(new HoldQueue());
 
 				controller2 = CreateEntity("group-controller");
-				controller2.AddComponent(new KeyboardControls(lRot: Keys.OemComma, rRot: Keys.OemPeriod, hold: Keys.OemQuestion, hardDrop: Keys.Up, delayedAutoShift: 170, autoRepeatRate: 50));
-				controller2.AddComponent(new PlayerController(field) { nextQueue = localNextQueue, holdQueue = localHoldQueue });
+				controller2.AddComponent(new KeyboardControls(lRot: Keys.NumPad1, rRot: Keys.NumPad2, hold: Keys.NumPad3, hardDrop: Keys.Up, delayedAutoShift: 170, autoRepeatRate: 50));
+				controller2.AddComponent(new PlayerController(field) { nextQueue = localNextQueue, holdQueue = localHoldQueue, outlineTint = Color.Turquoise, spawnLocation = new Point(10, 20) });
 			}
 
 			Camera.AddComponent<MouseLocator>();

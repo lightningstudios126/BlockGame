@@ -49,16 +49,10 @@ namespace BlockGame.Source.Components {
 			foreach (var def in queue) {
 				offset.Y += def.height + 2;
 				foreach (Point point in def.shape) {
-					DrawTile(batcher, point - offset, new Point(padding + Constants.pixelsPerTile, padding + Constants.pixelsPerTile), def.type);
+					Utilities.DrawTile(batcher, point - offset, new Point(padding + Constants.pixelsPerTile, padding + Constants.pixelsPerTile) + Transform.Position.ToPoint(), def.type);
 				}
 			}
 			batcher.DrawCircle(Transform.Position, 3, Color.Red);
-		}
-
-		public void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile) {
-			Point offset = new Point(Constants.pixelsPerTile * gridOffset.X, -Constants.pixelsPerTile * gridOffset.Y);
-			var texture = Entity.Scene.Content.LoadTexture(tile.spriteLocation);
-			batcher.Draw(texture, new Rectangle(Transform.Position.RoundToPoint() + worldOffset + offset, new Point(Constants.pixelsPerTile)), tile.color);
 		}
 	}
 }

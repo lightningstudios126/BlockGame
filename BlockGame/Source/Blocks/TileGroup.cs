@@ -25,24 +25,19 @@ namespace BlockGame.Source.Blocks {
 		}
 
 		/// <summary>
-		/// Returns true when there is no associated playfield or there are no intersecting tiles
+		/// Returns true when there is no associated playfield or when are no intersecting tiles
 		/// </summary>
-		/// <param name="testShape">The shape to test on</param>
 		/// <param name="relOffset">Translation relative to (0, 0)</param>
+		/// <param name="testShape">The shape to test on</param>
 		/// <returns>whether the offset puts the block in a valid location</returns>
-		public bool TestOffset(Point[] testShape, Point relOffset) {
+		public bool TestOffset(Point relOffset, Point[] testShape) {
 			Func<Point, bool> inBounds = p => !playfield.IsPointOutOfBounds(position + relOffset + p)
 				&& !playfield.IsPointIncluded(position + relOffset + p);
 			return this.playfield == null || testShape.All(inBounds);
 		}
 
-		/// <summary>
-		/// Returns true if there is no associated playfield or there are no intersecting tiles
-		/// </summary>
-		/// <param name="relOffset">Translation relative to (0, 0)</param>
-		/// <returns>whether the offset puts the block in a valid location</returns>
 		public bool TestOffset(Point relOffset) {
-			return TestOffset(shape, relOffset);
+			return TestOffset(relOffset, shape);
 		}
 
 		/// <summary>
@@ -53,7 +48,7 @@ namespace BlockGame.Source.Blocks {
 		/// <returns>first valid offset or <see langword="null"/></returns>
 		public Point? TestKickOffsets(Point[] testShape, Point[] offsets) {
 			foreach (var relOffset in offsets)
-				if (TestOffset(testShape, relOffset))
+				if (TestOffset(relOffset, testShape))
 					return relOffset;
 			return null;
 		}

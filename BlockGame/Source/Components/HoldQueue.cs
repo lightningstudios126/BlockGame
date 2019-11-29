@@ -35,17 +35,11 @@ namespace BlockGame.Source.Components {
 			Point offset = new Point(0, 0);
 			if (heldPiece != null) {
 				foreach (Point point in heldPiece.shape) {
-					DrawTile(batcher, point - offset, new Point(padding + Constants.pixelsPerTile, padding + Constants.pixelsPerTile), heldPiece.type);
+					Utilities.DrawTile(batcher, point - offset, new Point(padding + Constants.pixelsPerTile, padding + Constants.pixelsPerTile) + Transform.Position.ToPoint(), heldPiece.type);				
 				}
 			}
 
 			batcher.DrawCircle(Transform.Position, 3, Color.Red);
-		}
-
-		public void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile) {
-			Point offset = new Point(Constants.pixelsPerTile * gridOffset.X, -Constants.pixelsPerTile * gridOffset.Y);
-			var texture = Entity.Scene.Content.LoadTexture(tile.spriteLocation);
-			batcher.Draw(texture, new Rectangle(Transform.Position.RoundToPoint() + worldOffset + offset, new Point(Constants.pixelsPerTile)), tile.color);
 		}
 	}
 }
