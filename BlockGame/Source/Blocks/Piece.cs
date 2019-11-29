@@ -6,8 +6,8 @@ using System;
 using System.Linq;
 
 namespace BlockGame.Source.Blocks {
-	class TileGroup {
-		public TileGroupDefinition groupDef;
+	class Piece {
+		public PieceDefinition definition;
 		public Point[] shape;
 		public Point position;
 		public Direction facing;
@@ -15,13 +15,13 @@ namespace BlockGame.Source.Blocks {
 		public Playfield playfield;
 		public bool Landed => !MoveDown(true);
 
-		public TileGroup(TileGroupDefinition groupDef, Point position, Direction facing = Direction.Up) {
-			this.groupDef = groupDef;
+		public Piece(PieceDefinition definition, Point position, Direction facing = Direction.Up) {
+			this.definition = definition;
 			this.position = position;
 			this.facing = facing;
 
-			this.shape = new Point[groupDef.shape.Length];
-			Array.Copy(groupDef.shape, shape, groupDef.shape.Length);
+			this.shape = new Point[definition.shape.Length];
+			Array.Copy(definition.shape, shape, definition.shape.Length);
 		}
 
 		/// <summary>
@@ -60,7 +60,7 @@ namespace BlockGame.Source.Blocks {
 			Point[] testShape = shape.Select(a => new Point(-a.Y, a.X)).ToArray();
 			Direction newDir = facing.ShiftLeft();
 			// get relevant SRS offsets from kick table
-			Point[] offsets = Enumerable.Zip(groupDef.GetOffset(facing), groupDef.GetOffset(newDir), (a, b) => a - b).ToArray();
+			Point[] offsets = Enumerable.Zip(definition.GetOffset(facing), definition.GetOffset(newDir), (a, b) => a - b).ToArray();
 			Point? offset = TestKickOffsets(testShape, offsets);
 			if (offset.HasValue) {
 				shape = testShape;
@@ -76,7 +76,7 @@ namespace BlockGame.Source.Blocks {
 			var testShape = shape.Select(a => new Point(a.Y, -a.X)).ToArray();
 			var newDir = facing.ShiftRight();
 			// get relevant SRS offsets from kick table
-			var offsets = Enumerable.Zip(groupDef.GetOffset(facing), groupDef.GetOffset(newDir), (a, b) => a - b).ToArray();
+			var offsets = Enumerable.Zip(definition.GetOffset(facing), definition.GetOffset(newDir), (a, b) => a - b).ToArray();
 			var offset = TestKickOffsets(testShape, offsets);
 			if (offset.HasValue) {
 				shape = testShape;

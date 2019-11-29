@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace BlockGame.Source.Extensions {
-	public static class ColorExtensions {
+	public static class ColorExt {
 		public static Color SetR(this Color color, byte r) {
 			color.R = r;
 			return color;

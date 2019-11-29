@@ -12,22 +12,22 @@ namespace BlockGame.Source.Components {
 	class NextQueue : RenderableComponent {
 		int capacity;
 		IEnumerator<int> generator;
-		TileGroupDefinition[] options;
-		Queue<TileGroupDefinition> queue;
+		PieceDefinition[] options;
+		Queue<PieceDefinition> queue;
 
-		public NextQueue(Randomizers.Randomizer randomizer, int capacity = 5, params TileGroupDefinition[] options) {
+		public NextQueue(Randomizers.Randomizer randomizer, int capacity = 5, params PieceDefinition[] options) {
 			this.capacity = capacity;
 			this.options = options;
 			this.generator = randomizer(options.Length).GetEnumerator();
-			this.queue = new Queue<TileGroupDefinition>(capacity);
+			this.queue = new Queue<PieceDefinition>(capacity);
 			InitialLoad();
 		}
 
-		public IEnumerator<TileGroupDefinition> Generate() {
+		public IEnumerator<PieceDefinition> Generate() {
 			while (true) yield return GetNext();
 		}
 
-		public TileGroupDefinition GetNext() {
+		public PieceDefinition GetNext() {
 			generator.MoveNext();
 			queue.Enqueue(options[generator.Current]);
 			return queue.Dequeue();
@@ -46,10 +46,10 @@ namespace BlockGame.Source.Components {
 		public override void Render(Batcher batcher, Camera camera) {
 			batcher.DrawRect(Transform.Position, Width, Height, Color.Linen);
 			Point offset = new Point(0, -2);
-			foreach (var def in queue) {
-				offset.Y += def.height + 2;
-				foreach (Point point in def.shape) {
-					Utilities.DrawTile(batcher, point - offset, new Point(padding + Constants.pixelsPerTile, padding + Constants.pixelsPerTile) + Transform.Position.ToPoint(), def.type);
+			foreach (var pieceDef in queue) {
+				offset.Y += pieceDef.height + 2;
+				foreach (Point point in pieceDef.shape) {
+					Utilities.DrawTile(batcher, point - offset, new Point(padding + Constants.pixelsPerTile, padding + Constants.pixelsPerTile) + Transform.Position.ToPoint(), pieceDef.type);
 				}
 			}
 			batcher.DrawCircle(Transform.Position, 3, Color.Red);

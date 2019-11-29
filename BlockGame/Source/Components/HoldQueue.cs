@@ -9,10 +9,10 @@ using Nez;
 
 namespace BlockGame.Source.Components {
 	class HoldQueue : RenderableComponent {
-		TileGroupDefinition heldPiece;
+		PieceDefinition heldPiece;
 		bool isLocked = false;
 
-		public bool Swap(TileGroupDefinition toHold, out TileGroupDefinition swapped) {
+		public bool Swap(PieceDefinition toHold, out PieceDefinition swapped) {
 			if (isLocked) {
 				swapped = null;
 				return false;

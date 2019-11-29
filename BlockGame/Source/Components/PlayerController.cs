@@ -28,7 +28,7 @@ namespace BlockGame.Source.Components {
 		private bool doSoftDrop, doHardDrop, doHold;
 		private bool moveSucceeded;
 
-		public TileGroup activeGroup;
+		public Piece piece;
 		public Color outlineTint;
 		public Point spawnLocation;
 
@@ -39,9 +39,9 @@ namespace BlockGame.Source.Components {
 		public NextQueue nextQueue;
 		public HoldQueue holdQueue;
 
-		event Action<TileGroup> GeneratedNewPiece;
-		event Action<TileGroup> LockedPiece;
-		event Action<TileGroup> Displaced;
+		event Action<Piece> PieceGenerated;
+		event Action<Piece> PieceLocked;
+		event Action<Piece> PieceDisplaced;
 
 		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 15) {
 			this.playfield = playfield;
@@ -67,7 +67,7 @@ namespace BlockGame.Source.Components {
 			stateMachine.AddState(new States.StateLock());
 			stateMachine.AddState(new States.StatePlayfield());
 
-			if (holdQueue != null) LockedPiece += (x => holdQueue.Unlock());
+			if (holdQueue != null) PieceLocked += (x => holdQueue.Unlock());
 
 			playfield.StartedProcessing += () => this.SetEnabled(false);
 			playfield.FinishedProcessing += () => this.SetEnabled(true);
@@ -77,21 +77,20 @@ namespace BlockGame.Source.Components {
 		public void Update() {
 			UsePlayerInput();
 			if (doHold) {
-				if (holdQueue.Swap(activeGroup.groupDef, out var swapped)) {
-					var nextState = stateMachine.ChangeState<States.StateGenerate>();
-					if (swapped != null) nextState.ProvidePiece(swapped);
+				if (holdQueue.Swap(piece.definition, out var swapped)) {
+					var state = stateMachine.ChangeState<States.StateGenerate>();
+					if (swapped != null) state.ProvidePiece(swapped);
 				}
 				doHold = false;
 			}
-			if (activeGroup != null) {
+			if (piece != null) {
 				// if current overlapping terrain, then shift up
-				if (!activeGroup.TestOffset(new Point(0, 0))) {
+				if (!piece.TestOffset(new Point(0, 0))) {
 					int upOffset = 1;
-					while (!activeGroup.TestOffset(new Point(0, upOffset))) {
+					while (!piece.TestOffset(new Point(0, upOffset)))
 						upOffset++;
-					}
-					activeGroup.Shift(new Point(0, upOffset));
-					Displaced(activeGroup);
+					piece.Shift(new Point(0, upOffset));
+					PieceDisplaced(piece);
 				}
 			}
 			stateMachine.Update(Time.DeltaTime);
@@ -100,15 +99,15 @@ namespace BlockGame.Source.Components {
 		void UsePlayerInput() {
 			moveSucceeded = false;
 			if (controls.MoveAxis.Value < 0) {
-				if (activeGroup.MoveLeft()) moveSucceeded = true;
+				if (piece.MoveLeft()) moveSucceeded = true;
 			} else if (controls.MoveAxis.Value > 0) {
-				if (activeGroup.MoveRight()) moveSucceeded = true;
+				if (piece.MoveRight()) moveSucceeded = true;
 			}
 
 			if (controls.LRotate.IsPressed) {
-				if (activeGroup.RotateLeft()) moveSucceeded = true;
+				if (piece.RotateLeft()) moveSucceeded = true;
 			} else if (controls.RRotate.IsPressed) {
-				if (activeGroup.RotateRight()) moveSucceeded = true;
+				if (piece.RotateRight()) moveSucceeded = true;
 			}
 
 			doHold = controls.Hold.IsPressed;
@@ -119,21 +118,21 @@ namespace BlockGame.Source.Components {
 
 		private static class States {
 			public class StateGenerate : State<PlayerController> {
-				TileGroupDefinition def;
+				PieceDefinition def;
 
 				public override void Reason() {
 					def ??= _context.nextQueue.GetNext();
-					_context.activeGroup = _context.playfield.SpawnTileGroup(def, _context.spawnLocation);
+					_context.piece = _context.playfield.SpawnTileGroup(def, _context.spawnLocation);
 					def = null;
 					_machine.ChangeState<StateGravitate>().AddLine();
 				}
 
 				public override void Update(float deltaTime) { }
 				public override void End() {
-					_context.GeneratedNewPiece(_context.activeGroup);
+					_context.PieceGenerated(_context.piece);
 				}
 
-				public void ProvidePiece(TileGroupDefinition def) {
+				public void ProvidePiece(PieceDefinition def) {
 					this.def = def;
 				}
 			}
@@ -158,14 +157,14 @@ namespace BlockGame.Source.Components {
 
 					while (lineAcc >= 1) {
 						lineAcc--;
-						if (!_context.activeGroup.MoveDown())
+						if (!_context.piece.MoveDown())
 							lineAcc %= 1;
 					}
 
-					if (_context.activeGroup.Landed) {
+					if (_context.piece.Landed) {
 						var next = _machine.ChangeState<StateLock>();
-						if (_context.activeGroup.position.Y < next.lowestRow) {
-							next.lowestRow = _context.activeGroup.position.Y;
+						if (_context.piece.position.Y < next.lowestRow) {
+							next.lowestRow = _context.piece.position.Y;
 							next.ResetMoveResets();
 						}
 					}
@@ -180,8 +179,8 @@ namespace BlockGame.Source.Components {
 				public int lowestRow;
 
 				public override void OnInitialized() {
-					_context.GeneratedNewPiece += (x) => ResetAll();
-					_context.Displaced += (x) => ResetAll();
+					_context.PieceGenerated += (x) => ResetAll();
+					_context.PieceDisplaced += (x) => ResetAll();
 				}
 
 				public override void Update(float deltaTime) {
@@ -190,14 +189,14 @@ namespace BlockGame.Source.Components {
 					if (_context.moveSucceeded) {
 						lockTimer = 0;
 						moveResets++;
-						if (!_context.activeGroup.Landed) {
+						if (!_context.piece.Landed) {
 							_machine.ChangeState<StateGravitate>();
 						}
 					} else if (_context.doHardDrop || lockTimer >= _context.lockDelay || moveResets >= _context.maxMoveResets) {
 						_context.doHardDrop = false;
-						_context.playfield.LockTileGroup(_context.activeGroup);
+						_context.playfield.LockTileGroup(_context.piece);
 						_machine.ChangeState<StatePlayfield>();
-						_context.LockedPiece(_context.activeGroup);
+						_context.PieceLocked(_context.piece);
 					}
 				}
 

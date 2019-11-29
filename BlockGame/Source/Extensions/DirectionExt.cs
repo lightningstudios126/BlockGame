@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BlockGame.Source.Extensions {
-	public static class DirectionExtensions {
+	public static class DirectionExt {
 		public static Direction ShiftRight(this Direction direction) {
 			switch (direction) {
 				case Direction.Up:

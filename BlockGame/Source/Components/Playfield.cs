@@ -35,12 +35,12 @@ namespace BlockGame.Source.Components {
 			this.players = new List<PlayerController>();
 		}
 
-		public TileGroup SpawnTileGroup(TileGroupDefinition def) {
+		public Piece SpawnTileGroup(PieceDefinition def) {
 			return SpawnTileGroup(def, Constants.defaultGenerationLocation);
 		}
 
-		public TileGroup SpawnTileGroup(TileGroupDefinition def, Point spawnLocation) {
-			TileGroup group = new TileGroup(def, spawnLocation);
+		public Piece SpawnTileGroup(PieceDefinition def, Point spawnLocation) {
+			Piece group = new Piece(def, spawnLocation);
 			group.playfield = this;
 			return group;
 		}
@@ -59,11 +59,11 @@ namespace BlockGame.Source.Components {
 		/// <returns>whether <paramref name="row"/> is full</returns>
 		public bool IsRowFull(int row) => this[row].All(x => x != null);
 
-		/// <summary>Checks the tile grid and returns true if the position <paramref name="p"/> is occupied by a tile (or tile group, if <paramref name="includeGroups"/> is true)</summary>
+		/// <summary>Checks the tile grid and returns true if the position <paramref name="p"/> is occupied by a tile (or piece, if <paramref name="includeGroups"/> is true)</summary>
 		/// <param name="p">Position to test</param>
 		/// <param name="includeGroups">Should include tile groups when checking</param>
 		/// <returns>whether the <paramref name="p"/> is occupied</returns>
-		public bool IsPointIncluded(Point p, bool includeGroups = false) => grid[p.X, p.Y] != null || (includeGroups ? players.Select(x => x.activeGroup).Any(t => t.shape.Any(i => p == i)) : false);
+		public bool IsPointIncluded(Point p, bool includeGroups = false) => grid[p.X, p.Y] != null || (includeGroups ? players.Select(x => x.piece).Any(t => t.shape.Any(i => p == i)) : false);
 
 		/// <summary>Returns true if the position <paramref name="p"/> is out of bounds defined by the Playfield's height and width</summary>
 		/// <param name="p">Position to test</param>
@@ -95,10 +95,10 @@ namespace BlockGame.Source.Components {
 		/// Adds the cells occupied by a tile group to the tile grid, then removes it from the internal list of tile groups
 		/// </summary>
 		/// <param name="group">Group to lock</param>
-		public void LockTileGroup(TileGroup group) {
+		public void LockTileGroup(Piece group) {
 			foreach (var pos in group.shape) {
 				var absPos = pos + group.position;
-				grid[absPos.X, absPos.Y] = group.groupDef.type;
+				grid[absPos.X, absPos.Y] = group.definition.type;
 			}
 		}
 
@@ -115,18 +115,18 @@ namespace BlockGame.Source.Components {
 			}
 
 			foreach (var player in players) {
-				var group = player.activeGroup;
-				if (group != null) {
-					var ghost = group.GetLandedOffset();
-					foreach (Point point in group.shape) {
-						DrawOutline(batcher, point + group.position, player.outlineTint, 5);
-						DrawOutline(batcher, point + group.position + ghost, player.outlineTint, 5);
+				var piece = player.piece;
+				if (piece != null) {
+					var ghost = piece.GetLandedOffset();
+					foreach (Point point in piece.shape) {
+						DrawOutline(batcher, point + piece.position, player.outlineTint, 5);
+						DrawOutline(batcher, point + piece.position + ghost, player.outlineTint, 5);
 					}
-					foreach (Point point in group.shape) {
-						Utilities.DrawTile(batcher, point + group.position + ghost, Transform.Position.ToPoint(), group.groupDef.type, group.groupDef.type.ghostColor);
+					foreach (Point point in piece.shape) {
+						Utilities.DrawTile(batcher, point + piece.position + ghost, Transform.Position.ToPoint(), piece.definition.type, piece.definition.type.ghostColor);
 					}
-					foreach (Point point in group.shape) {
-						Utilities.DrawTile(batcher, point + group.position, Transform.Position.ToPoint(), group.groupDef.type);
+					foreach (Point point in piece.shape) {
+						Utilities.DrawTile(batcher, point + piece.position, Transform.Position.ToPoint(), piece.definition.type);
 					}
 				}
 			}

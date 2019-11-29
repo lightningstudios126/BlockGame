@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 
 namespace BlockGame.Source.Blocks {
-	public class TileGroupDefinition {
+	public class PieceDefinition {
 		// assume up direction
 		public readonly Point[] shape;
 		public readonly Tile type;
@@ -12,7 +12,7 @@ namespace BlockGame.Source.Blocks {
 		public readonly int width;
 		public readonly int height;
 
-		public TileGroupDefinition(Tile type, (int x, int y)[] shape, (int x, int y)[][] kickOffsets) {
+		public PieceDefinition(Tile type, (int x, int y)[] shape, (int x, int y)[][] kickOffsets) {
 			this.shape = shape.Select(a => new Point(a.x, a.y)).ToArray();
 			this.type = type;
 			this.kickOffsets = kickOffsets.Select(a => a.Select(b => new Point(b.x, b.y)).ToArray()).ToArray();
