@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using BlockGame.Source;
 using BlockGame.Source.Scenes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -9,12 +10,11 @@ using Nez;
 namespace BlockGame {
 	public class BlockGame : Core {
 
-		public BlockGame() : base() {
-		}
+		public BlockGame() : base(windowTitle: Constants.name) { }
 
 		protected override void Initialize() {
 			base.Initialize();
-			Scene = new GameScene();
+			Scene = new SceneCoop();
 		}
 
 		protected override void Update(GameTime gameTime) {
@@ -22,10 +22,6 @@ namespace BlockGame {
 				Exit();
 
 			base.Update(gameTime);
-		}
-
-		protected override void Draw(GameTime gameTime) {
-			base.Draw(gameTime);
 		}
 	}
 }

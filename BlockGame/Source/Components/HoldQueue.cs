@@ -8,9 +8,13 @@ using Microsoft.Xna.Framework;
 using Nez;
 
 namespace BlockGame.Source.Components {
-	class HoldQueue : RenderableComponent {
+	class HoldQueue : UIPanel {
 		PieceDefinition heldPiece;
 		bool isLocked = false;
+
+		public HoldQueue() {
+			this.BackgroundColour = new Color(40, 40, 40);
+		}
 
 		public bool Swap(PieceDefinition toHold, out PieceDefinition swapped) {
 			if (isLocked) {
@@ -31,7 +35,8 @@ namespace BlockGame.Source.Components {
 		public override float Height => padding + (5 * Constants.pixelsPerTile) + padding;
 		int padding = 10;
 		public override void Render(Batcher batcher, Camera camera) {
-			batcher.DrawRect(Transform.Position, Width, Height, Color.Linen);
+			batcher.DrawHollowRect(Transform.Position, Width, Height, OutlineColour, 4);
+			batcher.DrawRect(Transform.Position, Width, Height, BackgroundColour);
 			Point offset = new Point(0, 0);
 			if (heldPiece != null) {
 				foreach (Point point in heldPiece.shape) {

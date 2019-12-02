@@ -9,7 +9,7 @@ using Microsoft.Xna.Framework;
 using Nez;
 
 namespace BlockGame.Source.Components {
-	class NextQueue : RenderableComponent {
+	class NextQueue : UIPanel {
 		int capacity;
 		IEnumerator<int> generator;
 		PieceDefinition[] options;
@@ -20,6 +20,7 @@ namespace BlockGame.Source.Components {
 			this.options = options;
 			this.generator = randomizer(options.Length).GetEnumerator();
 			this.queue = new Queue<PieceDefinition>(capacity);
+			this.BackgroundColour = new Color(40, 40, 40);
 			InitialLoad();
 		}
 
@@ -41,10 +42,11 @@ namespace BlockGame.Source.Components {
 		}
 
 		public override float Width => 4 * Constants.pixelsPerTile + 2 * padding;
-		public override float Height => padding + capacity * (5 * Constants.pixelsPerTile) + padding;
+		public override float Height => padding + capacity * (3 * Constants.pixelsPerTile) + Constants.pixelsPerTile + padding;
 		int padding = 10;
 		public override void Render(Batcher batcher, Camera camera) {
-			batcher.DrawRect(Transform.Position, Width, Height, Color.Linen);
+			batcher.DrawHollowRect(Transform.Position, Width, Height, OutlineColour, 4);
+			batcher.DrawRect(Transform.Position, Width, Height, BackgroundColour);
 			Point offset = new Point(0, -2);
 			foreach (var pieceDef in queue) {
 				offset.Y += pieceDef.height + 2;

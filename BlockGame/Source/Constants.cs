@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 
 namespace BlockGame.Source {
 	public static class Constants {
+		public const string name = "BlockGame";
+
 		public const int standardWidth = 10;
-		public const int standardHeight = 40;
+		public const int standardHeight = 20;
 		public const int pixelsPerTile = 32;
 		public const float sixtieth = 1 / 60f;
 

@@ -10,7 +10,7 @@ namespace BlockGame.Source.Components {
 		public override float Height => 20;
 		public override float Width => 20;
 		public override void Render(Batcher batcher, Camera camera) {
-			batcher.DrawString(Graphics.Instance.BitmapFont, Input.MousePosition.ToString(), Input.MousePosition, Color.Black);
+			batcher.DrawString(Graphics.Instance.BitmapFont, Input.MousePosition.ToString(), Input.MousePosition, Color.White);
 		}
 
 		public void Update() {

@@ -10,8 +10,8 @@ namespace BlockGame.Source.Components {
 	/// For a standard field height, row 20 is the highest row fully visible.<br/>
 	/// Row 21 should be only partially displayed.<br/>
 	/// </summary>
-	class Playfield : RenderableComponent {
-		int width, height, skyline;
+	class Playfield : UIPanel {
+		int width, height, buffer, fullHeight;
 
 		/// <summary>
 		/// The data structure representing the contents of the Playfield.<br/>
@@ -24,15 +24,15 @@ namespace BlockGame.Source.Components {
 		public event Action StartedProcessing;
 		public event Action FinishedProcessing;
 
-		Color backgroundColor = new Color(30, 30, 30);
-
-		public Playfield(int width = Constants.standardWidth, int height = Constants.standardHeight, int skyline = 20) {
+		public Playfield(int width = Constants.standardWidth, int height = Constants.standardHeight, int buffer = Constants.standardHeight) {
 			this.width = width;
 			this.height = height;
-			this.skyline = skyline;
-			this.grid = new Tile[width, height];
-
+			this.buffer = buffer;
+			this.fullHeight = height + buffer;
+			this.grid = new Tile[width, fullHeight];
 			this.players = new List<PlayerController>();
+
+			this.BackgroundColour = new Color(40, 40, 40);
 		}
 
 		public Piece SpawnTileGroup(PieceDefinition def) {
@@ -52,7 +52,7 @@ namespace BlockGame.Source.Components {
 		public Tile[] this[int i] => Enumerable.Range(0, width).Select(x => grid[x, i]).ToArray();
 
 		/// <summary>Returns the indices of all the rows that are full</summary>
-		public int[] FullRows => Enumerable.Range(0, height).Where(x => IsRowFull(x)).ToArray();
+		public int[] FullRows => Enumerable.Range(0, fullHeight).Where(x => IsRowFull(x)).ToArray();
 
 		/// <summary>Checks and returns whether the row number <paramref name="row"/> is completely full of tiles</summary>
 		/// <param name="row">Row number to test</param>
@@ -65,21 +65,21 @@ namespace BlockGame.Source.Components {
 		/// <returns>whether the <paramref name="p"/> is occupied</returns>
 		public bool IsPointIncluded(Point p, bool includeGroups = false) => grid[p.X, p.Y] != null || (includeGroups ? players.Select(x => x.piece).Any(t => t.shape.Any(i => p == i)) : false);
 
-		/// <summary>Returns true if the position <paramref name="p"/> is out of bounds defined by the Playfield's height and width</summary>
+		/// <summary>Returns true if the position <paramref name="p"/> is out of bounds defined by the Playfield's full height and width</summary>
 		/// <param name="p">Position to test</param>
 		/// <returns>whether the <paramref name="p"/> is out of bounds</returns>
-		public bool IsPointOutOfBounds(Point p) => !Mathf.Between(p.X, 0, width - 1) || !Mathf.Between(p.Y, 0, height - 1);
+		public bool IsPointOutOfBounds(Point p) => !Mathf.Between(p.X, 0, width - 1) || !Mathf.Between(p.Y, 0, fullHeight - 1);
 
 		/// <summary>
 		/// Removes the tiles in <paramref name="rows"/> and drops down the rows above them
 		/// </summary>
 		/// <param name="rows">Rows to clear</param>
 		public void ClearAndDropLines(params int[] rows) {
-			if (rows.Any(x => x < 0 || x > height))
+			if (rows.Any(x => x < 0 || x > fullHeight))
 				throw new ArgumentOutOfRangeException(nameof(rows), $"A line index in {nameof(rows)} is invalid");
 
 			var sorted = new Queue<int>(rows.OrderBy(x => x));
-			for (int y = sorted.Peek(), offset = 0; y < height; y++) {
+			for (int y = sorted.Peek(), offset = 0; y < fullHeight; y++) {
 				while (sorted.Count > 0 && y + offset == sorted.Peek()) {
 					sorted.Dequeue();
 					offset++;
@@ -87,7 +87,7 @@ namespace BlockGame.Source.Components {
 
 				int takeFrom = y + offset;
 				for (int x = 0; x < width; x++)
-					grid[x, y] = takeFrom >= height ? null : grid[x, takeFrom];
+					grid[x, y] = takeFrom >= fullHeight ? null : grid[x, takeFrom];
 			}
 		}
 
@@ -102,11 +102,13 @@ namespace BlockGame.Source.Components {
 			}
 		}
 
-		public override float Height => Constants.pixelsPerTile * height;
+		public override float Height => Constants.pixelsPerTile * (height + 1);
 		public override float Width => Constants.pixelsPerTile * width;
 		public override void Render(Batcher batcher, Camera camera) {
 			batcher.DrawCircle(Transform.Position, 2, Color.Red);
-			batcher.DrawRect(new Rectangle(Transform.Position.RoundToPoint() - new Point(0, (height - 1) * Constants.pixelsPerTile), new Point(width * Constants.pixelsPerTile, height * Constants.pixelsPerTile)), backgroundColor);
+			batcher.DrawHollowRect((Transform.Position.RoundToPoint() - new Point(0, height * Constants.pixelsPerTile)).ToVector2(), Width, Height, OutlineColour, 4);
+			batcher.DrawRect((Transform.Position.RoundToPoint() - new Point(0, height * Constants.pixelsPerTile)).ToVector2(),
+				Width, Height, BackgroundColour);
 
 			for (int y = 0; y < height; y++) {
 				for (int x = 0; x < width; x++) {
@@ -119,8 +121,8 @@ namespace BlockGame.Source.Components {
 				if (piece != null) {
 					var ghost = piece.GetLandedOffset();
 					foreach (Point point in piece.shape) {
-						DrawOutline(batcher, point + piece.position, player.outlineTint, 5);
-						DrawOutline(batcher, point + piece.position + ghost, player.outlineTint, 5);
+						DrawOutline(batcher, point + piece.position, player.outlineTint, 4);
+						DrawOutline(batcher, point + piece.position + ghost, player.outlineTint, 4);
 					}
 					foreach (Point point in piece.shape) {
 						Utilities.DrawTile(batcher, point + piece.position + ghost, Transform.Position.ToPoint(), piece.definition.type, piece.definition.type.ghostColor);
@@ -145,7 +147,7 @@ namespace BlockGame.Source.Components {
 
 		public override string ToString() {
 			return string.Join("\n",
-				Enumerable.Range(0, height).Reverse().Select(
+				Enumerable.Range(0, fullHeight).Reverse().Select(
 					y => Enumerable.Range(0, width).Reverse().Select(x => grid[x, y])
 				).Select(x => string.Join(" ", x)));
 		}
