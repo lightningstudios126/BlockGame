@@ -11,7 +11,8 @@ namespace BlockGame.Source.Components {
 	/// Row 21 should be only partially displayed.<br/>
 	/// </summary>
 	class Playfield : UIPanel {
-		int width, height, buffer, fullHeight;
+		int width, height, buffer;
+		int fullHeight => height + buffer;
 
 		/// <summary>
 		/// The data structure representing the contents of the Playfield.<br/>
@@ -28,7 +29,6 @@ namespace BlockGame.Source.Components {
 			this.width = width;
 			this.height = height;
 			this.buffer = buffer;
-			this.fullHeight = height + buffer;
 			this.grid = new Tile[width, fullHeight];
 			this.players = new List<PlayerController>();
 
@@ -110,7 +110,7 @@ namespace BlockGame.Source.Components {
 			batcher.DrawRect((Transform.Position.RoundToPoint() - new Point(0, height * Constants.pixelsPerTile)).ToVector2(),
 				Width, Height, BackgroundColour);
 
-			for (int y = 0; y < height; y++) {
+			for (int y = 0; y < height + 1; y++) {
 				for (int x = 0; x < width; x++) {
 					DrawGridTile(batcher, new Point(x, y));
 				}
