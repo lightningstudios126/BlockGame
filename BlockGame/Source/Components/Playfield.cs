@@ -106,7 +106,7 @@ namespace BlockGame.Source.Components {
 		public override float Width => Constants.pixelsPerTile * width;
 		public override void Render(Batcher batcher, Camera camera) {
 			batcher.DrawCircle(Transform.Position, 2, Color.Red);
-			batcher.DrawHollowRect((Transform.Position.RoundToPoint() - new Point(0, height * Constants.pixelsPerTile)).ToVector2(), Width, Height, OutlineColour, 4);
+			batcher.DrawHollowRect((Transform.Position.RoundToPoint() - new Point(0, height * Constants.pixelsPerTile)).ToVector2(), Width, Height, OutlineColour, 6);
 			batcher.DrawRect((Transform.Position.RoundToPoint() - new Point(0, height * Constants.pixelsPerTile)).ToVector2(),
 				Width, Height, BackgroundColour);
 
@@ -121,8 +121,8 @@ namespace BlockGame.Source.Components {
 				if (piece != null) {
 					var ghost = piece.GetLandedOffset();
 					foreach (Point point in piece.shape) {
-						DrawOutline(batcher, point + piece.position, player.outlineTint, 4);
-						DrawOutline(batcher, point + piece.position + ghost, player.outlineTint, 4);
+						DrawOutline(batcher, point + piece.position, player.outlineTint, 6);
+						DrawOutline(batcher, point + piece.position + ghost, player.outlineTint, 6);
 					}
 					foreach (Point point in piece.shape) {
 						Utilities.DrawTile(batcher, point + piece.position + ghost, Transform.Position.ToPoint(), piece.definition.type, piece.definition.type.ghostColor);

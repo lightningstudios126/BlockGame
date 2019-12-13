@@ -15,13 +15,32 @@ namespace BlockGame.Source.Scenes {
 		Entity controller2;
 		Randomizers.Randomizer randomizer;
 
-		public SceneCoop() : base() {
-			AddRenderer(new DefaultRenderer());
-			ClearColor = Color.Black;
-		}
+		Renderer renderer;
+
+		public SceneCoop() : base() { }
 
 		public override void Initialize() {
 			base.Initialize();
+			ClearColor = Color.Black;
+			renderer = AddRenderer(new DefaultRenderer());
+			AddPostProcessor(new ScanlinesPostProcessor(0));
+			var glitch = AddPostProcessor(new PixelGlitchPostProcessor(1) { HorizontalOffset = 0});
+
+			IEnumerator<object> DoGlitchEffect(PixelGlitchPostProcessor glitch) {
+				while (true) {
+					var next = Nez.Random.Range(1f, 3f);
+					yield return Coroutine.WaitForSeconds(next);
+					var duration = Nez.Random.Range(0.1f, 0.5f);
+					while (duration > 0) {
+						duration -= Time.DeltaTime;
+						glitch.HorizontalOffset = Nez.Random.Range(0.2f, 1f) * ((Nez.Random.NextInt(2) * 2) - 1);
+						yield return null;
+					}
+					glitch.HorizontalOffset = 0;
+				}
+			}
+			Core.StartCoroutine(DoGlitchEffect(glitch));
+
 			randomizer = Randomizers.BagRandomizer;
 
 			field = CreateEntity("grid").AddComponent(new Playfield(15) { OutlineColour = Color.White });

@@ -16,8 +16,8 @@ namespace BlockGame.Source.Blocks {
 			this.shape = shape.Select(a => new Point(a.x, a.y)).ToArray();
 			this.type = type;
 			this.kickOffsets = kickOffsets.Select(a => a.Select(b => new Point(b.x, b.y)).ToArray()).ToArray();
-			this.width = shape.Max(p => p.x) - shape.Min(p => p.x);
-			this.height = shape.Max(p => p.y) - shape.Min(p => p.y);
+			this.width = shape.Max(p => p.x) - shape.Min(p => p.x) + 1;
+			this.height = shape.Max(p => p.y) - shape.Min(p => p.y) + 1;
 		}
 
 		/// <summary>

@@ -32,12 +32,12 @@ namespace BlockGame.Source.Components {
 			isLocked = false;
 		}
 		public override float Width => 4 * Constants.pixelsPerTile + 2 * padding;
-		public override float Height => padding + (5 * Constants.pixelsPerTile) + padding;
+		public override float Height => padding + (4 * Constants.pixelsPerTile) + padding;
 		int padding = 10;
 		public override void Render(Batcher batcher, Camera camera) {
-			batcher.DrawHollowRect(Transform.Position, Width, Height, OutlineColour, 4);
+			batcher.DrawHollowRect(Transform.Position, Width, Height, OutlineColour, 6);
 			batcher.DrawRect(Transform.Position, Width, Height, BackgroundColour);
-			Point offset = new Point(0, 0);
+			Point offset = new Point(0, 1);
 			if (heldPiece != null) {
 				foreach (Point point in heldPiece.shape) {
 					Utilities.DrawTile(batcher, point - offset, new Point(padding + Constants.pixelsPerTile, padding + Constants.pixelsPerTile) + Transform.Position.ToPoint(), heldPiece.type);				
