@@ -63,7 +63,7 @@ namespace BlockGame.Source.Components {
 		/// <param name="p">Position to test</param>
 		/// <param name="includeGroups">Should include tile groups when checking</param>
 		/// <returns>whether the <paramref name="p"/> is occupied</returns>
-		public bool IsPointIncluded(Point p, bool includeGroups = false) => grid[p.X, p.Y] != null || (includeGroups ? players.Select(x => x.piece).Any(t => t.shape.Any(i => p == i)) : false);
+		public bool IsPointOccupied(Point p, bool includeGroups = false) => grid[p.X, p.Y] != null || (includeGroups ? players.Select(x => x.piece).Any(t => t.Shape.Any(i => p == i)) : false);
 
 		/// <summary>Returns true if the position <paramref name="p"/> is out of bounds defined by the Playfield's full height and width</summary>
 		/// <param name="p">Position to test</param>
@@ -96,7 +96,7 @@ namespace BlockGame.Source.Components {
 		/// </summary>
 		/// <param name="group">Group to lock</param>
 		public void LockTileGroup(Piece group) {
-			foreach (var pos in group.shape) {
+			foreach (var pos in group.Shape) {
 				var absPos = pos + group.position;
 				grid[absPos.X, absPos.Y] = group.definition.type;
 			}
@@ -110,7 +110,7 @@ namespace BlockGame.Source.Components {
 			batcher.DrawRect((Transform.Position.RoundToPoint() - new Point(0, height * Constants.pixelsPerTile)).ToVector2(),
 				Width, Height, BackgroundColour);
 
-			for (int y = 0; y < height + 1; y++) {
+			for (int y = 0; y < height + 2; y++) {
 				for (int x = 0; x < width; x++) {
 					DrawGridTile(batcher, new Point(x, y));
 				}
@@ -120,15 +120,23 @@ namespace BlockGame.Source.Components {
 				var piece = player.piece;
 				if (piece != null) {
 					var ghost = piece.GetLandedOffset();
-					foreach (Point point in piece.shape) {
+					foreach (Point point in piece.Shape) {
 						DrawOutline(batcher, point + piece.position, player.outlineTint, 6);
 						DrawOutline(batcher, point + piece.position + ghost, player.outlineTint, 6);
 					}
-					foreach (Point point in piece.shape) {
+					foreach (Point point in piece.Shape) {
 						Utilities.DrawTile(batcher, point + piece.position + ghost, Transform.Position.ToPoint(), piece.definition.type, piece.definition.type.ghostColor);
 					}
-					foreach (Point point in piece.shape) {
+					foreach (Point point in piece.Shape) {
 						Utilities.DrawTile(batcher, point + piece.position, Transform.Position.ToPoint(), piece.definition.type);
+					}
+					int temp = 0;
+					foreach (Point point in piece.outline) {
+						Point gridOffset = point + piece.position;
+						Point offset = new Point(Constants.pixelsPerTile * gridOffset.X, -Constants.pixelsPerTile * gridOffset.Y);
+						batcher.DrawCircle(Transform.Position + offset.ToVector2(), 2, Color.Green);
+						batcher.DrawString(Graphics.Instance.BitmapFont, temp + "", Transform.Position + offset.ToVector2(), Color.White);
+						temp++;
 					}
 				}
 			}

@@ -8,9 +8,17 @@ using System.Linq;
 namespace BlockGame.Source.Blocks {
 	class Piece {
 		public PieceDefinition definition;
-		public Point[] shape;
+		public Point[] Shape {
+			get => shape;
+			private set {
+				shape = value;
+				outline = Utilities.FindOutline(shape);
+			}
+		}
+		private Point[] shape;
 		public Point position;
 		public Direction facing;
+		public Point[] outline;
 
 		public Playfield playfield;
 		public bool Landed => !MoveDown(true);
@@ -22,6 +30,7 @@ namespace BlockGame.Source.Blocks {
 
 			this.shape = new Point[definition.shape.Length];
 			Array.Copy(definition.shape, shape, definition.shape.Length);
+			this.outline = Utilities.FindOutline(shape);
 		}
 
 		/// <summary>
@@ -31,13 +40,14 @@ namespace BlockGame.Source.Blocks {
 		/// <param name="testShape">The shape to test on</param>
 		/// <returns>whether the offset puts the block in a valid location</returns>
 		public bool TestOffset(Point relOffset, Point[] testShape) {
-			Func<Point, bool> inBounds = p => !playfield.IsPointOutOfBounds(position + relOffset + p)
-				&& !playfield.IsPointIncluded(position + relOffset + p);
+			bool inBounds(Point p) =>
+				!playfield.IsPointOutOfBounds(position + relOffset + p)
+				&& !playfield.IsPointOccupied(position + relOffset + p);
 			return this.playfield == null || testShape.All(inBounds);
 		}
 
 		public bool TestOffset(Point relOffset) {
-			return TestOffset(relOffset, shape);
+			return TestOffset(relOffset, Shape);
 		}
 
 		/// <summary>
@@ -57,13 +67,13 @@ namespace BlockGame.Source.Blocks {
 		public bool RotateLeft() {
 			// [x, y] -> [-y, x]
 			// rotate given shape widdershins around (0, 0)
-			Point[] testShape = shape.Select(a => new Point(-a.Y, a.X)).ToArray();
+			Point[] testShape = Shape.Select(a => new Point(-a.Y, a.X)).ToArray();
 			Direction newDir = facing.ShiftLeft();
 			// get relevant SRS offsets from kick table
 			Point[] offsets = Enumerable.Zip(definition.GetOffset(facing), definition.GetOffset(newDir), (a, b) => a - b).ToArray();
 			Point? offset = TestKickOffsets(testShape, offsets);
 			if (offset.HasValue) {
-				shape = testShape;
+				Shape = testShape;
 				facing = newDir;
 				position += offset.Value;
 				return true;
@@ -73,13 +83,13 @@ namespace BlockGame.Source.Blocks {
 		public bool RotateRight() {
 			// [x, y] -> [y, -x]
 			// rotate given shape clockwise around (0, 0)
-			var testShape = shape.Select(a => new Point(a.Y, -a.X)).ToArray();
+			var testShape = Shape.Select(a => new Point(a.Y, -a.X)).ToArray();
 			var newDir = facing.ShiftRight();
 			// get relevant SRS offsets from kick table
 			var offsets = Enumerable.Zip(definition.GetOffset(facing), definition.GetOffset(newDir), (a, b) => a - b).ToArray();
 			var offset = TestKickOffsets(testShape, offsets);
 			if (offset.HasValue) {
-				shape = testShape;
+				Shape = testShape;
 				facing = newDir;
 				position += offset.Value;
 				return true;

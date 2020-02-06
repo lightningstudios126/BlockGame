@@ -15,16 +15,14 @@ namespace BlockGame.Source.Scenes {
 		Entity controller2;
 		Randomizers.Randomizer randomizer;
 
-		Renderer renderer;
-
 		public SceneCoop() : base() { }
-
+		
 		public override void Initialize() {
 			base.Initialize();
-			ClearColor = Color.Black;
-			renderer = AddRenderer(new DefaultRenderer());
-			AddPostProcessor(new ScanlinesPostProcessor(0));
-			var glitch = AddPostProcessor(new PixelGlitchPostProcessor(1) { HorizontalOffset = 0});
+			ClearColor = new Color(16, 16, 16);
+			AddRenderer(new DefaultRenderer());
+			AddPostProcessor(new ScanlinesPostProcessor(1));
+			var glitch = AddPostProcessor(new PixelGlitchPostProcessor(0) { HorizontalOffset = 0, VerticalSize = 4 });
 
 			IEnumerator<object> DoGlitchEffect(PixelGlitchPostProcessor glitch) {
 				while (true) {
