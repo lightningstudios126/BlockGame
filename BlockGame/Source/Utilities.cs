@@ -1,28 +1,33 @@
 ﻿using BlockGame.Source.Blocks;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Nez;
-using Nez.Textures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BlockGame.Source {
 	public static class Utilities {
-		public static void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile) {
+		public static void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile, Color tint, int cutOff = -1) {
 			Point offset = new Point(Constants.pixelsPerTile * gridOffset.X, -Constants.pixelsPerTile * gridOffset.Y);
-			Point totalOffset = worldOffset + offset;
-			var texture = Core.Scene.Content.LoadTexture(tile.spriteLocation);
-			batcher.Draw(texture, new Rectangle(totalOffset.X, totalOffset.Y, Constants.pixelsPerTile, Constants.pixelsPerTile), tile.color);
+			if (cutOff < 0 || gridOffset.Y < cutOff) {
+				Point totalOffset = worldOffset + offset;
+				var texture = Core.Scene.Content.LoadTexture(tile.spriteLocation);
+				batcher.Draw(texture, new Rectangle(totalOffset.X, totalOffset.Y, Constants.pixelsPerTile, Constants.pixelsPerTile), tint);
+			}
 		}
-		public static void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile, Color tint) {
+
+		public static void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile, int cutOff = -1) {
+			DrawTile(batcher, gridOffset, worldOffset, tile, tile.color, cutOff);
+		}
+
+		public static void DrawTileOutline(Batcher batcher, Point gridOffset, Point worldOffset, Color color, int thickness = 1, int cutOff = -1) {
 			Point offset = new Point(Constants.pixelsPerTile * gridOffset.X, -Constants.pixelsPerTile * gridOffset.Y);
-			Point totalOffset = worldOffset + offset;
-			var texture = Core.Scene.Content.LoadTexture(tile.spriteLocation);
-			batcher.Draw(texture, new Rectangle(totalOffset.X, totalOffset.Y, Constants.pixelsPerTile, Constants.pixelsPerTile), tint);
+			if (cutOff < 0 || gridOffset.Y < cutOff) {
+				Point totalOffset = worldOffset + offset;
+				batcher.DrawHollowRect(new Rectangle(totalOffset.X, totalOffset.Y, Constants.pixelsPerTile, Constants.pixelsPerTile), color, thickness);
+			}
 		}
+
 
 		public static Point[] FindOutline(Point[] shape) {
 			// get all the corners of the blocks that make up the shape

@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FNA\FNA.Core.csproj" />
+    <ProjectReference Include="..\Nez\Nez.ImGui\Nez.FNA.ImGui.csproj" />
     <ProjectReference Include="..\Nez\Nez.Portable\Nez.FNA.Standard.csproj" />
   </ItemGroup>
 

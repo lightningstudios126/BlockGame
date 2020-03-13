@@ -3,6 +3,7 @@ using BlockGame.Source.Scenes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Nez;
+using Nez.ImGuiTools;
 using System.Diagnostics;
 
 namespace BlockGame {
@@ -18,6 +19,8 @@ namespace BlockGame {
 
 #if DEBUG
 			//Trace.Listeners.Add(new TextWriterTraceListener(System.Console.Out));
+			var imGuiManager = new ImGuiManager();
+			RegisterGlobalManager(imGuiManager);
 #endif
 		}
 
