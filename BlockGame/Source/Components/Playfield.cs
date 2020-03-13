@@ -11,16 +11,17 @@ namespace BlockGame.Source.Components {
 	/// Row 21 should be only partially displayed.<br/>
 	/// </summary>
 	class Playfield : UIPanel {
-		int width, height, buffer;
-		int fullHeight => height + buffer;
+		private readonly int width, height, buffer;
+
+		private int FullHeight => height + buffer;
 
 		/// <summary>
 		/// The data structure representing the contents of the Playfield.<br/>
 		/// Index [x,0] corresponds to the bottom row of the matrix.<br/>
 		/// Index [0,y] corresponds to the left most column of the matrix.<br/>
 		/// </summary>
-		Tile?[,] grid;
-		List<PlayerController> players;
+		private readonly Tile?[,] grid;
+		private readonly List<PlayerController> players;
 
 		public event Action StartedProcessing;
 		public event Action FinishedProcessing;
@@ -29,7 +30,7 @@ namespace BlockGame.Source.Components {
 			this.width = width;
 			this.height = height;
 			this.buffer = buffer;
-			this.grid = new Tile[width, fullHeight];
+			this.grid = new Tile[width, FullHeight];
 			this.players = new List<PlayerController>();
 
 			this.BackgroundColour = new Color(40, 40, 40);
@@ -43,9 +44,7 @@ namespace BlockGame.Source.Components {
 		}
 
 		public Piece SpawnTileGroup(PieceDefinition def, Point spawnLocation) {
-			Piece group = new Piece(def, spawnLocation, this);
-			group.playfield = this;
-			return group;
+			return new Piece(def, spawnLocation, this);
 		}
 
 		public void AddPlayer(PlayerController player) {
@@ -55,7 +54,7 @@ namespace BlockGame.Source.Components {
 		public Tile?[] this[int i] => Enumerable.Range(0, width).Select(x => grid[x, i]).ToArray();
 
 		/// <summary>Returns the indices of all the rows that are full</summary>
-		public int[] FullRows => Enumerable.Range(0, fullHeight).Where(x => IsRowFull(x)).ToArray();
+		public int[] FullRows => Enumerable.Range(0, FullHeight).Where(x => IsRowFull(x)).ToArray();
 
 		/// <summary>Checks and returns whether the row number <paramref name="row"/> is completely full of tiles</summary>
 		/// <param name="row">Row number to test</param>
@@ -71,18 +70,18 @@ namespace BlockGame.Source.Components {
 		/// <summary>Returns true if the position <paramref name="p"/> is out of bounds defined by the Playfield's full height and width</summary>
 		/// <param name="p">Position to test</param>
 		/// <returns>whether the <paramref name="p"/> is out of bounds</returns>
-		public bool IsPointOutOfBounds(Point p) => !Mathf.Between(p.X, 0, width - 1) || !Mathf.Between(p.Y, 0, fullHeight - 1);
+		public bool IsPointOutOfBounds(Point p) => !Mathf.Between(p.X, 0, width - 1) || !Mathf.Between(p.Y, 0, FullHeight - 1);
 
 		/// <summary>
 		/// Removes the tiles in <paramref name="rows"/> and drops down the rows above them
 		/// </summary>
 		/// <param name="rows">Rows to clear</param>
 		public void ClearAndDropLines(params int[] rows) {
-			if (rows.Any(x => x < 0 || x > fullHeight))
+			if (rows.Any(x => x < 0 || x > FullHeight))
 				throw new ArgumentOutOfRangeException(nameof(rows), $"A line index in {nameof(rows)} is invalid");
 
 			var sorted = new Queue<int>(rows.OrderBy(x => x));
-			for (int y = sorted.Peek(), offset = 0; y < fullHeight; y++) {
+			for (int y = sorted.Peek(), offset = 0; y < FullHeight; y++) {
 				while (sorted.Count > 0 && y + offset == sorted.Peek()) {
 					sorted.Dequeue();
 					offset++;
@@ -90,7 +89,7 @@ namespace BlockGame.Source.Components {
 
 				int takeFrom = y + offset;
 				for (int x = 0; x < width; x++)
-					grid[x, y] = takeFrom >= fullHeight ? null : grid[x, takeFrom];
+					grid[x, y] = takeFrom >= FullHeight ? null : grid[x, takeFrom];
 			}
 		}
 
@@ -159,7 +158,7 @@ namespace BlockGame.Source.Components {
 
 		public override string ToString() {
 			return string.Join("\n",
-				Enumerable.Range(0, fullHeight).Reverse().Select(
+				Enumerable.Range(0, FullHeight).Reverse().Select(
 					y => Enumerable.Range(0, width).Reverse().Select(x => grid[x, y])
 				).Select(x => string.Join(" ", x)));
 		}

@@ -40,7 +40,7 @@ namespace BlockGame.Source.Components {
 		}
 		public override float Width => 4 * Constants.pixelsPerTile + 2 * padding;
 		public override float Height => padding + (4 * Constants.pixelsPerTile) + padding;
-		int padding = 10;
+		private readonly int padding = 10;
 		public override void Render(Batcher batcher, Camera camera) {
 			batcher.DrawHollowRect(Transform.Position, Width, Height, OutlineColour, 6);
 			batcher.DrawRect(Transform.Position, Width, Height, BackgroundColour);

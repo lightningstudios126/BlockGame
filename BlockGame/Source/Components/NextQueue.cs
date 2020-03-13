@@ -10,10 +10,10 @@ using Nez;
 
 namespace BlockGame.Source.Components {
 	class NextQueue : UIPanel {
-		int capacity;
-		IEnumerator<int> generator;
-		PieceDefinition[] options;
-		Queue<PieceDefinition> queue;
+		private readonly int capacity;
+		private readonly IEnumerator<int> generator;
+		private readonly PieceDefinition[] options;
+		private readonly Queue<PieceDefinition> queue;
 
 		public NextQueue(Randomizers.Randomizer randomizer, int capacity = 5, params PieceDefinition[] options) {
 			this.capacity = capacity;
@@ -43,7 +43,7 @@ namespace BlockGame.Source.Components {
 
 		public override float Width => 4 * Constants.pixelsPerTile + 2 * padding;
 		public override float Height => padding + capacity * (3 * Constants.pixelsPerTile) + Constants.pixelsPerTile + padding;
-		int padding = 10;
+		private readonly int padding = 10;
 		public override void Render(Batcher batcher, Camera camera) {
 			batcher.DrawHollowRect(Transform.Position, Width, Height, OutlineColour, 6);
 			batcher.DrawRect(Transform.Position, Width, Height, BackgroundColour);

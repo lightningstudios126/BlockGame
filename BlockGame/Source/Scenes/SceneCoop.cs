@@ -25,7 +25,7 @@ namespace BlockGame.Source.Scenes {
 			SetDesignResolution(1280, 720, SceneResolutionPolicy.ShowAllPixelPerfect);
 			ClearColor = new Color(16, 16, 16);
 			AddRenderer(new DefaultRenderer());
-			
+			AddPostProcessors();
 
 			randomizer = Randomizers.BagRandomizer;
 
@@ -65,7 +65,7 @@ namespace BlockGame.Source.Scenes {
 			AddPostProcessor(new ScanlinesPostProcessor(1));
 			var glitch = AddPostProcessor(new PixelGlitchPostProcessor(0) { HorizontalOffset = 0, VerticalSize = 4 });
 
-			IEnumerator DoGlitchEffect(PixelGlitchPostProcessor glitch) {
+			static IEnumerator DoGlitchEffect(PixelGlitchPostProcessor glitch) {
 				while (true) {
 					var next = Nez.Random.Range(1f, 3f);
 					yield return Coroutine.WaitForSeconds(next);
@@ -80,6 +80,8 @@ namespace BlockGame.Source.Scenes {
 			}
 			Core.StartCoroutine(DoGlitchEffect(glitch));
 		}
+
+
 
 		public override void OnStart() {
 			base.OnStart();

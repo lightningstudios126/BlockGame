@@ -32,7 +32,7 @@ namespace BlockGame.Source.Components {
 		public Color outlineTint;
 		public Point spawnLocation;
 
-		Playfield playfield;
+		private readonly Playfield playfield;
 		StateMachine<PlayerController> stateMachine;
 
 		public ControlScheme controls;
