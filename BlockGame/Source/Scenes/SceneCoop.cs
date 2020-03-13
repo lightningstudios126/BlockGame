@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using BlockGame.Source.Blocks;
 using BlockGame.Source.Components;
@@ -10,34 +12,20 @@ using Nez.Textures;
 
 namespace BlockGame.Source.Scenes {
 	class SceneCoop : Scene {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
 		Playfield field;
 		Entity controller1;
 		Entity controller2;
 		Randomizers.Randomizer randomizer;
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
 
-		public SceneCoop() : base() { }
-		
 		public override void Initialize() {
 			base.Initialize();
+
+			SetDesignResolution(1280, 720, SceneResolutionPolicy.ShowAllPixelPerfect);
 			ClearColor = new Color(16, 16, 16);
 			AddRenderer(new DefaultRenderer());
-			AddPostProcessor(new ScanlinesPostProcessor(1));
-			var glitch = AddPostProcessor(new PixelGlitchPostProcessor(0) { HorizontalOffset = 0, VerticalSize = 4 });
-
-			IEnumerator<object> DoGlitchEffect(PixelGlitchPostProcessor glitch) {
-				while (true) {
-					var next = Nez.Random.Range(1f, 3f);
-					yield return Coroutine.WaitForSeconds(next);
-					var duration = Nez.Random.Range(0.1f, 0.5f);
-					while (duration > 0) {
-						duration -= Time.DeltaTime;
-						glitch.HorizontalOffset = Nez.Random.Range(0.2f, 1f) * ((Nez.Random.NextInt(2) * 2) - 1);
-						yield return null;
-					}
-					glitch.HorizontalOffset = 0;
-				}
-			}
-			Core.StartCoroutine(DoGlitchEffect(glitch));
+			
 
 			randomizer = Randomizers.BagRandomizer;
 
@@ -71,6 +59,26 @@ namespace BlockGame.Source.Scenes {
 			}
 
 			Camera.AddComponent<MouseLocator>();
+		}
+
+		private void AddPostProcessors() {
+			AddPostProcessor(new ScanlinesPostProcessor(1));
+			var glitch = AddPostProcessor(new PixelGlitchPostProcessor(0) { HorizontalOffset = 0, VerticalSize = 4 });
+
+			IEnumerator DoGlitchEffect(PixelGlitchPostProcessor glitch) {
+				while (true) {
+					var next = Nez.Random.Range(1f, 3f);
+					yield return Coroutine.WaitForSeconds(next);
+					var duration = Nez.Random.Range(0.1f, 0.5f);
+					while (duration > 0) {
+						duration -= Time.DeltaTime;
+						glitch.HorizontalOffset = Nez.Random.Range(0.2f, 1f) * ((Nez.Random.NextInt(2) * 2) - 1);
+						yield return null;
+					}
+					glitch.HorizontalOffset = 0;
+				}
+			}
+			Core.StartCoroutine(DoGlitchEffect(glitch));
 		}
 
 		public override void OnStart() {

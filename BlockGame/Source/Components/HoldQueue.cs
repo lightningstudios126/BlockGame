@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,14 +10,20 @@ using Nez;
 
 namespace BlockGame.Source.Components {
 	class HoldQueue : UIPanel {
-		PieceDefinition heldPiece;
+		PieceDefinition? heldPiece;
 		bool isLocked = false;
 
 		public HoldQueue() {
 			this.BackgroundColour = new Color(40, 40, 40);
 		}
 
-		public bool Swap(PieceDefinition toHold, out PieceDefinition swapped) {
+		/// <summary>
+		/// Swaps out the internal piece for <paramref name="toHold"/> and outputs <paramref name="swapped"/>. Returns <see langword="true"/> when the swap is successful.
+		/// </summary>
+		/// <param name="toHold"></param>
+		/// <param name="swapped"></param>
+		/// <returns></returns>
+		public bool Swap(PieceDefinition toHold, out PieceDefinition? swapped) {
 			if (isLocked) {
 				swapped = null;
 				return false;

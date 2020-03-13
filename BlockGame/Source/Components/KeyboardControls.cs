@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Input;
 using Nez;
 
 namespace BlockGame.Source.Components {
-	class KeyboardControls : Controls {
+	class KeyboardControls : ControlScheme {
 		/// <summary>
 		/// The delay before the input starts repeats in milliseconds
 		/// </summary>

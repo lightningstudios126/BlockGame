@@ -1,3 +1,6 @@
 [submodule "Nez"]
 	path = Nez
 	url = https://github.com/prime31/Nez.git
+[submodule "FNA"]
+	path = FNA
+	url = git://github.com/FNA-XNA/FNA.git

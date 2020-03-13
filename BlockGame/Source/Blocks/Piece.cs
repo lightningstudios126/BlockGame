@@ -23,10 +23,11 @@ namespace BlockGame.Source.Blocks {
 		public Playfield playfield;
 		public bool Landed => !MoveDown(true);
 
-		public Piece(PieceDefinition definition, Point position, Direction facing = Direction.Up) {
+		public Piece(PieceDefinition definition, Point position, Playfield playfield, Direction facing = Direction.Up) {
 			this.definition = definition;
 			this.position = position;
 			this.facing = facing;
+			this.playfield = playfield;
 
 			this.shape = new Point[definition.shape.Length];
 			Array.Copy(definition.shape, shape, definition.shape.Length);
@@ -43,7 +44,7 @@ namespace BlockGame.Source.Blocks {
 			bool inBounds(Point p) =>
 				!playfield.IsPointOutOfBounds(position + relOffset + p)
 				&& !playfield.IsPointOccupied(position + relOffset + p);
-			return this.playfield == null || testShape.All(inBounds);
+			return testShape.All(inBounds);
 		}
 
 		public bool TestOffset(Point relOffset) {

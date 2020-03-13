@@ -2,7 +2,7 @@
 using System;
 
 namespace BlockGame.Source.Components {
-	public abstract class Controls : Component {
+	public abstract class ControlScheme : Component {
 		public VirtualButton LMove { get; protected set; }
 		public VirtualButton RMove { get; protected set; }
 		public VirtualButton LRotate { get; protected set; }
@@ -15,7 +15,7 @@ namespace BlockGame.Source.Components {
 		/// </summary>
 		public VirtualIntegerAxis MoveAxis { get; protected set; }
 
-		protected Controls() {
+		protected ControlScheme() {
 			LMove = new VirtualButton();
 			RMove = new VirtualButton();
 			LRotate = new VirtualButton();

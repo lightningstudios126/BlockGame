@@ -13,13 +13,15 @@ namespace BlockGame.Source {
 	public static class Utilities {
 		public static void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile) {
 			Point offset = new Point(Constants.pixelsPerTile * gridOffset.X, -Constants.pixelsPerTile * gridOffset.Y);
+			Point totalOffset = worldOffset + offset;
 			var texture = Core.Scene.Content.LoadTexture(tile.spriteLocation);
-			batcher.Draw(texture, new Rectangle(worldOffset + offset, new Point(Constants.pixelsPerTile)), tile.color);
+			batcher.Draw(texture, new Rectangle(totalOffset.X, totalOffset.Y, Constants.pixelsPerTile, Constants.pixelsPerTile), tile.color);
 		}
 		public static void DrawTile(Batcher batcher, Point gridOffset, Point worldOffset, Tile tile, Color tint) {
 			Point offset = new Point(Constants.pixelsPerTile * gridOffset.X, -Constants.pixelsPerTile * gridOffset.Y);
+			Point totalOffset = worldOffset + offset;
 			var texture = Core.Scene.Content.LoadTexture(tile.spriteLocation);
-			batcher.Draw(texture, new Rectangle(worldOffset + offset, new Point(Constants.pixelsPerTile)), tint);
+			batcher.Draw(texture, new Rectangle(totalOffset.X, totalOffset.Y, Constants.pixelsPerTile, Constants.pixelsPerTile), tint);
 		}
 
 		public static Point[] FindOutline(Point[] shape) {

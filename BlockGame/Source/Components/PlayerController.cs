@@ -35,7 +35,7 @@ namespace BlockGame.Source.Components {
 		Playfield playfield;
 		StateMachine<PlayerController> stateMachine;
 
-		public Controls controls;
+		public ControlScheme controls;
 		public NextQueue nextQueue;
 		public HoldQueue holdQueue;
 
@@ -43,7 +43,9 @@ namespace BlockGame.Source.Components {
 		event Action<Piece> PieceLocked;
 		event Action<Piece> PieceDisplaced;
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
 		public PlayerController(Playfield playfield, float gravity = 1f / 60, float softDropMultiplier = 20, float lockDelay = 0.5f, int maxMoveResets = 15) {
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
 			this.playfield = playfield;
 
 			this.gravity = gravity;
@@ -53,10 +55,14 @@ namespace BlockGame.Source.Components {
 
 			outlineTint = Color.White;
 			spawnLocation = Constants.defaultGenerationLocation;
+
+			PieceGenerated += (p) => { };
+			PieceLocked += (p) => { };
+			PieceDisplaced += (p) => { };
 		}
 
 		public override void OnAddedToEntity() {
-			controls ??= Entity.GetComponent<Controls>();
+			controls ??= Entity.GetComponent<ControlScheme>();
 			Insist.IsNotNull(playfield);
 			Insist.IsNotNull(controls);
 			Insist.IsNotNull(nextQueue);
@@ -67,7 +73,7 @@ namespace BlockGame.Source.Components {
 			stateMachine.AddState(new States.StateLock());
 			stateMachine.AddState(new States.StatePlayfield());
 
-			if (holdQueue != null) PieceLocked += (x => holdQueue.Unlock());
+			if (holdQueue != null) PieceLocked += x => holdQueue.Unlock();
 
 			playfield.StartedProcessing += () => this.SetEnabled(false);
 			playfield.FinishedProcessing += () => this.SetEnabled(true);
@@ -118,12 +124,17 @@ namespace BlockGame.Source.Components {
 
 		private static class States {
 			public class StateGenerate : State<PlayerController> {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
 				PieceDefinition def;
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+				bool pieceProvided;
 
 				public override void Reason() {
-					def ??= _context.nextQueue.GetNext();
+					if (!pieceProvided) {
+						def = _context.nextQueue.GetNext();
+						pieceProvided = false;
+					}
 					_context.piece = _context.playfield.SpawnTileGroup(def, _context.spawnLocation);
-					def = null;
 					_machine.ChangeState<StateGravitate>().AddLine();
 				}
 
@@ -134,6 +145,7 @@ namespace BlockGame.Source.Components {
 
 				public void ProvidePiece(PieceDefinition def) {
 					this.def = def;
+					pieceProvided = true;
 				}
 			}
 

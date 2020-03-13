@@ -19,7 +19,7 @@ namespace BlockGame.Source.Components {
 		/// Index [x,0] corresponds to the bottom row of the matrix.<br/>
 		/// Index [0,y] corresponds to the left most column of the matrix.<br/>
 		/// </summary>
-		Tile[,] grid;
+		Tile?[,] grid;
 		List<PlayerController> players;
 
 		public event Action StartedProcessing;
@@ -33,6 +33,9 @@ namespace BlockGame.Source.Components {
 			this.players = new List<PlayerController>();
 
 			this.BackgroundColour = new Color(40, 40, 40);
+
+			StartedProcessing += () => { };
+			FinishedProcessing += () => { };
 		}
 
 		public Piece SpawnTileGroup(PieceDefinition def) {
@@ -40,7 +43,7 @@ namespace BlockGame.Source.Components {
 		}
 
 		public Piece SpawnTileGroup(PieceDefinition def, Point spawnLocation) {
-			Piece group = new Piece(def, spawnLocation);
+			Piece group = new Piece(def, spawnLocation, this);
 			group.playfield = this;
 			return group;
 		}
@@ -49,7 +52,7 @@ namespace BlockGame.Source.Components {
 			players.Add(player);
 		}
 
-		public Tile[] this[int i] => Enumerable.Range(0, width).Select(x => grid[x, i]).ToArray();
+		public Tile?[] this[int i] => Enumerable.Range(0, width).Select(x => grid[x, i]).ToArray();
 
 		/// <summary>Returns the indices of all the rows that are full</summary>
 		public int[] FullRows => Enumerable.Range(0, fullHeight).Where(x => IsRowFull(x)).ToArray();
@@ -143,14 +146,15 @@ namespace BlockGame.Source.Components {
 		}
 
 		public void DrawGridTile(Batcher batcher, Point gridLocation) {
-			Tile tile = grid[gridLocation.X, gridLocation.Y];
+			Tile? tile = grid[gridLocation.X, gridLocation.Y];
 			if (tile != null)
 				Utilities.DrawTile(batcher, gridLocation, Transform.Position.ToPoint(), tile);
 		}
 
 		public void DrawOutline(Batcher batcher, Point gridLocation, Color color, int thickness = 1) {
 			Point offset = new Point(Constants.pixelsPerTile * gridLocation.X, -Constants.pixelsPerTile * gridLocation.Y);
-			batcher.DrawHollowRect(new Rectangle((offset.ToVector2() + Transform.Position).RoundToPoint(), new Point(Constants.pixelsPerTile)), color, thickness);
+			Point totalOffset = offset + Transform.Position.ToPoint();
+			batcher.DrawHollowRect(new Rectangle(totalOffset.X, totalOffset.Y, Constants.pixelsPerTile, Constants.pixelsPerTile), color, thickness);
 		}
 
 		public override string ToString() {
